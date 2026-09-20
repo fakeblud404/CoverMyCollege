@@ -76,7 +76,7 @@ export default function LeaderboardHero({ activeAdsCount, onStartBidding }: Lead
         >
           Fund My College.
           <br />
-          <span style={{ color: 'var(--gold)' }}>Rank #1.</span>
+          <span style={{ color: 'var(--blue)' }}>Rank #1.</span>
         </h1>
 
         {/* Supporting sentence */}

@@ -97,7 +97,7 @@ export default function TermsPage() {
           }}
         >
           Questions about these Terms? Contact us at{' '}
-          <a href="mailto:legal@appbids.in" style={{ color: 'var(--accent-blue)' }}>legal@appbids.in</a>
+          <a href="mailto:support@covermycollege.com" style={{ color: 'var(--accent-blue)' }}>support@covermycollege.com</a>
           {' or visit '}
           <a href="/support" style={{ color: 'var(--accent-blue)' }}>our support page</a>.
         </div>

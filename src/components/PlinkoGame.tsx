@@ -7,7 +7,8 @@ interface PlinkoGameProps {
   onComplete: (multiplier: number) => void;
 }
 
-const SLOT_MULTIPLIERS = [10, 5, 2, 1.5, 1, 1.5, 2, 5, 10];
+const SLOT_MULTIPLIERS = [75, 50, 35, 20, 10, 20, 35, 50, 75];
+const SLOT_BOOST_LABELS = ['+75% Odds', '+50% Odds', '+35% Odds', '+20% Odds', '+10% Odds', '+20% Odds', '+35% Odds', '+50% Odds', '+75% Odds'];
 const ROWS = 8;
 const COLS = 9;
 const BALL_RADIUS = 6; // slightly smaller for multi-ball density
@@ -16,11 +17,11 @@ const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 480;
 
 function getSlotColor(multiplier: number): string {
-  if (multiplier >= 10) return '#22c55e';
-  if (multiplier >= 5) return '#84cc16';
-  if (multiplier >= 2) return 'var(--accent-gold)';
-  if (multiplier >= 1.5) return '#f59e0b';
-  return '#6b7280';
+  if (multiplier >= 75) return '#0071e3';
+  if (multiplier >= 50) return '#2563eb';
+  if (multiplier >= 35) return '#3b82f6';
+  if (multiplier >= 20) return '#60a5fa';
+  return '#93c5fd';
 }
 
 interface Peg {
@@ -119,10 +120,10 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
         ctx.strokeRect(slot.x + 2, CANVAS_HEIGHT - 40, slot.width - 4, 36);
 
         ctx.fillStyle = color;
-        ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+        ctx.font = 'bold 10px Inter, system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`${mult}×`, slot.x + slot.width / 2, CANVAS_HEIGHT - 22);
+        ctx.fillText(SLOT_BOOST_LABELS[i], slot.x + slot.width / 2, CANVAS_HEIGHT - 22);
       });
 
       // Active Balls
@@ -178,16 +179,16 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
         id: index,
         x: startX,
         y: 20,
-        vx: (Math.random() - 0.5) * 1.5,
+        vx: (Math.random() - 0.5) * 1.2,
         vy: 0,
         targetSlotIndex: targetIdx,
         hasLanded: false,
         // Stagger spawning in small batches of 3-5 balls
-        spawnDelayFrames: Math.floor(index / 3) * 20,
+        spawnDelayFrames: Math.floor(index / 3) * 30,
       };
     });
 
-    const gravity = 0.28;
+    const gravity = 0.12; // Lower gravity for slower, more dramatic ball drops!
     const damping = 0.65;
     const activePegs = new Set<number>();
     const balls = [...initialBalls];
@@ -318,7 +319,7 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
             Balls Landed: <strong style={{ color: '#fff' }}>{landedCount} / {targetSlotIndices.length}</strong>
           </span>
           <span style={{ color: 'var(--text-secondary)' }}>
-            Running Average: <strong style={{ color: 'var(--accent-gold)' }}>{runningAverage}×</strong>
+            Average Step-Up Chance: <strong style={{ color: 'var(--blue)' }}>+{runningAverage}% Odds</strong>
           </span>
         </div>
       )}
@@ -357,8 +358,8 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
             textAlign: 'center',
             padding: '16px 24px',
             borderRadius: 'var(--radius-lg)',
-            background: 'rgba(245, 166, 35, 0.1)',
-            border: '1px solid rgba(245, 166, 35, 0.3)',
+            background: 'rgba(0, 113, 227, 0.08)',
+            border: '1px solid rgba(0, 113, 227, 0.25)',
             width: '100%',
           }}
         >
@@ -369,10 +370,10 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
             style={{
               fontSize: '2rem',
               fontWeight: 800,
-              color: 'var(--accent-gold)',
+              color: 'var(--blue)',
             }}
           >
-            {runningAverage}× Average Multiplier
+            +{runningAverage}% Step-Up Odds Earned!
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4 }}>
             Calculated across {targetSlotIndices.length} balls

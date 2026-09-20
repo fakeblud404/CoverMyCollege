@@ -68,16 +68,16 @@ export default function LeaderboardEntry({ ad, rank, onBid }: LeaderboardEntryPr
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         border: isGold
-          ? '1px solid rgba(217, 119, 6, 0.35)'
+          ? '1px solid rgba(0, 113, 227, 0.35)'
           : status === 'ending-soon'
-          ? '1px solid rgba(220, 38, 38, 0.25)'
+          ? '1px solid rgba(0, 113, 227, 0.25)'
           : '1px solid rgba(0, 0, 0, 0.08)',
         boxShadow: isGold
-          ? '0 0 24px rgba(217, 119, 6, 0.15)'
+          ? '0 0 24px rgba(0, 113, 227, 0.15)'
           : hover
           ? '0 8px 28px rgba(0, 0, 0, 0.08)'
           : '0 4px 16px rgba(0, 0, 0, 0.04)',
-        borderLeft: isGold ? '4px solid var(--accent-gold)' : undefined,
+        borderLeft: isGold ? '4px solid var(--blue)' : undefined,
         transition: 'all 0.2s ease',
         opacity: isClosed ? 0.65 : 1,
         cursor: 'default',
@@ -100,7 +100,7 @@ export default function LeaderboardEntry({ ad, rank, onBid }: LeaderboardEntryPr
             style={{
               fontSize: '0.9rem',
               fontWeight: 800,
-              color: rank <= 3 ? '#d97706' : '#64748b',
+              color: rank <= 3 ? '#2563eb' : '#64748b',
             }}
           >
             #{rank}
@@ -108,24 +108,33 @@ export default function LeaderboardEntry({ ad, rank, onBid }: LeaderboardEntryPr
         )}
       </div>
 
-      {/* Product icon / image */}
+      {/* Product icon / image / logo */}
       <div
         style={{
           width: 44,
           height: 44,
           borderRadius: 'var(--radius-md)',
-          background: isGold ? 'rgba(217, 119, 6, 0.1)' : 'rgba(37, 99, 235, 0.08)',
-          border: `1px solid ${isGold ? 'rgba(217, 119, 6, 0.2)' : 'rgba(0, 0, 0, 0.08)'}`,
+          background: 'rgba(37, 99, 235, 0.08)',
+          border: '1px solid rgba(0, 113, 227, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '1.1rem',
           fontWeight: 800,
-          color: isGold ? '#d97706' : '#2563eb',
+          color: '#2563eb',
           flexShrink: 0,
+          overflow: 'hidden',
         }}
       >
-        {ad.title ? ad.title.charAt(0).toUpperCase() : 'A'}
+        {ad.logoUrl ? (
+          <img
+            src={ad.logoUrl}
+            alt={ad.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          ad.title ? ad.title.charAt(0).toUpperCase() : 'A'
+        )}
       </div>
 
       {/* Title + Meta */}
@@ -178,7 +187,7 @@ export default function LeaderboardEntry({ ad, rank, onBid }: LeaderboardEntryPr
           style={{
             fontSize: isGold ? '1.2rem' : '1rem',
             fontWeight: 800,
-            color: isGold ? '#d97706' : '#0f172a',
+            color: isGold ? '#2563eb' : '#0f172a',
             letterSpacing: '-0.02em',
           }}
         >

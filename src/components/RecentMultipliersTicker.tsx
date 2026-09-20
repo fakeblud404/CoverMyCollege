@@ -29,10 +29,7 @@ export default function RecentMultipliersTicker() {
   if (!mounted) return null;
 
   const getColor = (m: number) => {
-    if (m >= 5)  return '#16a34a';
-    if (m >= 2)  return '#d97706';
-    if (m >= 1)  return '#2563eb';
-    return '#dc2626';
+    return '#2563eb';
   };
 
   const getEmoji = (m: number) => {
@@ -84,8 +81,8 @@ export default function RecentMultipliersTicker() {
             width: 7,
             height: 7,
             borderRadius: '50%',
-            background: '#16a34a',
-            boxShadow: '0 0 7px #16a34a',
+            background: '#2563eb',
+            boxShadow: '0 0 7px #2563eb',
             display: 'inline-block',
             animation: 'pulse 1.5s infinite',
           }}
@@ -125,52 +122,25 @@ export default function RecentMultipliersTicker() {
           alignItems: 'center',
           whiteSpace: 'nowrap',
           paddingLeft: LABEL_WIDTH,
-          /* 
-            The strip is 3× the item count.
-            translateX(-33.333%) moves exactly one full copy's worth of items,
-            creating a seamless infinite scroll to the left.
-          */
-          animation: 'ticker 32s linear infinite',
+          animation: 'ticker 20s linear infinite',
           willChange: 'transform',
         }}
       >
-        {items.map((w, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <span
             key={i}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 5,
-              marginRight: 36,
-              fontSize: '0.77rem',
+              gap: 12,
+              marginRight: 48,
+              fontSize: '0.82rem',
+              fontWeight: 600,
               color: '#334155',
             }}
           >
-            {/* Separator dot between entries */}
-            {i % WINNERS.length !== 0 || i === 0 ? null : (
-              <span style={{ color: '#cbd5e1', marginRight: 36 }}>•••</span>
-            )}
-            <span style={{ fontSize: '0.85rem' }}>{getEmoji(w.multiplier)}</span>
-            <span style={{ fontWeight: 700, color: '#0f172a' }}>{w.title}</span>
-            <span style={{ color: '#94a3b8' }}>won</span>
-            <span style={{ fontWeight: 800, color: '#16a34a' }}>
-              ${(w.finalBid / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </span>
-            <span style={{ color: '#94a3b8' }}>at</span>
-            <span
-              style={{
-                fontWeight: 800,
-                color: getColor(w.multiplier),
-                background: `${getColor(w.multiplier)}14`,
-                border: `1px solid ${getColor(w.multiplier)}33`,
-                padding: '1px 6px',
-                borderRadius: 4,
-                fontSize: '0.72rem',
-              }}
-            >
-              {w.multiplier}× · {w.odds} odds
-            </span>
-            <span style={{ color: '#e2e8f0', marginLeft: 12 }}>│</span>
+            <span style={{ color: '#0071e3', fontWeight: 700 }}>🏆 winners will be mentioned here for now.</span>
+            <span style={{ color: '#cbd5e1' }}>✦</span>
           </span>
         ))}
       </div>

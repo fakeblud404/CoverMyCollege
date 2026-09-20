@@ -172,7 +172,7 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
           <a href="/responsible-gaming" style={{ color: 'var(--accent-blue)', textDecoration: 'underline' }}>Responsible Gaming</a> policy.
         </p>
 
-        <div className="rg-banner" style={{ marginBottom: 24, textAlign: 'left', background: 'rgba(217, 119, 6, 0.08)', color: '#d97706', border: '1px solid rgba(217, 119, 6, 0.2)', padding: '10px 14px', borderRadius: 8 }}>
+        <div className="rg-banner" style={{ marginBottom: 24, textAlign: 'left', background: 'rgba(0, 113, 227, 0.08)', color: 'var(--blue)', border: '1px solid rgba(0, 113, 227, 0.2)', padding: '10px 14px', borderRadius: 8 }}>
           ️ Plinko involves real-money risk. Please gamble responsibly. Set limits before you play.
         </div>
 
@@ -186,7 +186,7 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
                 setAgeVerified(true);
               }
             }}
-            style={{ marginTop: 4, accentColor: 'var(--accent-green)', width: 18, height: 18, flexShrink: 0 }}
+            style={{ marginTop: 4, accentColor: 'var(--accent-blue)', width: 18, height: 18, flexShrink: 0 }}
           />
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
             I confirm I am <strong style={{ color: '#0f172a' }}>18 years or older</strong>, I have read the responsible gaming policy, and I understand the risks involved in real-money play.
@@ -195,8 +195,8 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
 
         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
           Need help? Call{' '}
-          <a href="tel:9152987821" style={{ color: 'var(--accent-amber)' }}>iCall: 9152987821</a> (World) or visit{' '}
-          <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-amber)' }}>
+          <a href="tel:9152987821" style={{ color: 'var(--accent-blue)' }}>iCall: 9152987821</a> (World) or visit{' '}
+          <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-blue)' }}>
             BeGambleAware.org
           </a>
         </div>
@@ -301,8 +301,8 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
                     style={{
                       padding: '8px 12px',
                       borderRadius: 'var(--radius-md)',
-                      border: wager === w * 100 ? '1px solid var(--accent-gold)' : '1px solid rgba(0,0,0,0.08)',
-                      background: wager === w * 100 ? '#d97706' : '#ffffff',
+                      border: wager === w * 100 ? '1px solid var(--accent-blue)' : '1px solid rgba(0,0,0,0.08)',
+                      background: wager === w * 100 ? 'var(--accent-blue)' : '#ffffff',
                       color: wager === w * 100 ? '#ffffff' : 'var(--text-secondary)',
                       fontWeight: 600,
                       cursor: playing ? 'not-allowed' : 'pointer',
@@ -345,11 +345,11 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
             }}
           >
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-              {risk.charAt(0).toUpperCase() + risk.slice(1)} Risk — Multiplier Layout
+              {risk.charAt(0).toUpperCase() + risk.slice(1)} Risk — Leaderboard Position Boost Layout
             </div>
             <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
               {riskConfig.slotMultipliers.map((m, i) => {
-                const color = m >= 5 ? '#059669' : m >= 2 ? '#d97706' : m >= 1 ? '#2563eb' : '#64748b';
+                const color = '#2563eb';
                 return (
                   <div
                     key={i}
@@ -365,7 +365,7 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
                       minWidth: 44,
                     }}
                   >
-                    {m}×
+                    +{m} Ranks
                   </div>
                 );
               })}

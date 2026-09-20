@@ -54,8 +54,8 @@ export default function Footer() {
             <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link href="/faq" className="footer-link">FAQ</Link>
               <Link href="/support" className="footer-link">Contact Support</Link>
-              <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@appbids.in'}`} className="footer-link">
-                support@appbids.in
+              <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@covermycollege.com'}`} className="footer-link">
+                support@covermycollege.com
               </a>
             </nav>
           </div>
@@ -68,7 +68,7 @@ export default function Footer() {
             <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <Link href="/responsible-gaming" className="footer-link">Set Your Limits</Link>
               <Link href="/responsible-gaming#self-exclusion" className="footer-link">Self-Exclusion</Link>
-              <a href="tel:9152987821" className="footer-link" style={{ color: 'var(--gold)' }}>
+              <a href="tel:9152987821" className="footer-link" style={{ color: 'var(--blue)' }}>
                 iCall: 9152987821
               </a>
               <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" className="footer-link">
@@ -82,8 +82,8 @@ export default function Footer() {
         <div
           style={{
             padding: '16px 20px',
-            background: 'rgba(217,119,6,0.05)',
-            border: '1px solid rgba(217,119,6,0.12)',
+            background: 'rgba(0,113,227,0.05)',
+            border: '1px solid rgba(0,113,227,0.12)',
             borderRadius: 'var(--radius-md)',
             marginBottom: 28,
             fontSize: '0.8rem',
@@ -91,9 +91,9 @@ export default function Footer() {
             lineHeight: 1.65,
           }}
         >
-          <strong style={{ color: 'var(--gold)' }}>18+ Only.</strong> AppBids involves real-money bidding. Please bid responsibly. Set limits before you start. If you feel your bidding is a problem, call iCall at{' '}
+          <strong style={{ color: 'var(--blue)' }}>18+ Only.</strong> AppBids involves real-money bidding. Please bid responsibly. Set limits before you start. If you feel your bidding is a problem, call iCall at{' '}
           <strong>9152987821</strong> or visit{' '}
-          <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>
+          <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue)', textDecoration: 'underline' }}>
             BeGambleAware.org
           </a>.
         </div>

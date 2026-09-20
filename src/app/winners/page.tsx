@@ -211,14 +211,14 @@ export default function WinnersPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {plinkoLeaderboard.map((p, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontWeight: 800, color: i === 0 ? 'var(--accent-gold)' : 'var(--text-muted)', width: 20, textAlign: 'center', fontSize: '0.85rem' }}>
+                      <span style={{ fontWeight: 800, color: i === 0 ? 'var(--blue)' : 'var(--text-muted)', width: 20, textAlign: 'center', fontSize: '0.85rem' }}>
                         #{i + 1}
                       </span>
                       <span style={{ flex: 1, fontWeight: 600, fontSize: '0.85rem', color: '#0f172a' }}>{p.name}</span>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '2px 8px', borderRadius: '100px', background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.25)' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '2px 8px', borderRadius: '100px', background: 'rgba(37,99,235,0.1)', color: '#2563eb', border: '1px solid rgba(37,99,235,0.25)' }}>
                         {p.multiplier}
                       </span>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{p.amountDisplay}</span>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--blue)' }}>{p.amountDisplay}</span>
                     </div>
                   ))}
                 </div>
@@ -249,11 +249,11 @@ export default function WinnersPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {mostWins.map((u, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontWeight: 800, color: i === 0 ? 'var(--accent-gold)' : 'var(--text-muted)', width: 20, textAlign: 'center', fontSize: '0.85rem' }}>
+                      <span style={{ fontWeight: 800, color: i === 0 ? 'var(--blue)' : 'var(--text-muted)', width: 20, textAlign: 'center', fontSize: '0.85rem' }}>
                         #{i + 1}
                       </span>
                       <span style={{ flex: 1, fontWeight: 600, fontSize: '0.85rem', color: '#0f172a' }}>{u.name}</span>
-                      <span style={{ fontSize: '0.82rem', color: 'var(--accent-blue)', fontWeight: 700 }}>{u.wins} bid{u.wins !== 1 ? 's' : ''}</span>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--blue)', fontWeight: 700 }}>{u.wins} bid{u.wins !== 1 ? 's' : ''}</span>
                     </div>
                   ))}
                 </div>

@@ -18,18 +18,18 @@
   --blue:         #0071e3;
   --blue-dim:     rgba(0, 113, 227, 0.1);
   --blue-hover:   #0077ed;
-  --gold:         #d97706;
-  --gold-dim:     rgba(217, 119, 6, 0.1);
-  --green:        #1d9954;
-  --green-dim:    rgba(29, 153, 84, 0.1);
-  --red:          #d93025;
-  --red-dim:      rgba(217, 48, 37, 0.1);
+  --gold:         #0071e3;
+  --gold-dim:     rgba(0, 113, 227, 0.1);
+  --green:        #0071e3;
+  --green-dim:    rgba(0, 113, 227, 0.1);
+  --red:          #0071e3;
+  --red-dim:      rgba(0, 113, 227, 0.1);
 
   /* Auction status */
-  --status-live:      #1d9954;
-  --status-live-dim:  rgba(29, 153, 84, 0.1);
-  --status-ending:    #d93025;
-  --status-ending-dim:rgba(217, 48, 37, 0.1);
+  --status-live:      #0071e3;
+  --status-live-dim:  rgba(0, 113, 227, 0.1);
+  --status-ending:    #0071e3;
+  --status-ending-dim:rgba(0, 113, 227, 0.1);
   --status-closed:    #86868b;
   --status-closed-dim:rgba(134, 134, 139, 0.1);
 
@@ -60,17 +60,17 @@
   --text-primary:     var(--ink);
   --text-secondary:   var(--ink-2);
   --text-muted:       var(--ink-3);
-  --accent-gold:      var(--gold);
-  --accent-gold-dim:  var(--gold-dim);
+  --accent-gold:      var(--blue);
+  --accent-gold-dim:  var(--blue-dim);
   --accent-blue:      var(--blue);
   --accent-blue-dim:  var(--blue-dim);
-  --accent-green:     var(--green);
-  --accent-green-dim: var(--green-dim);
-  --accent-red:       var(--red);
-  --accent-red-dim:   var(--red-dim);
-  --accent-purple:    #9333ea;
-  --accent-emerald:   #059669;
-  --accent-amber:     var(--gold);
+  --accent-green:     var(--blue);
+  --accent-green-dim: var(--blue-dim);
+  --accent-red:       var(--blue);
+  --accent-red-dim:   var(--blue-dim);
+  --accent-purple:    var(--blue);
+  --accent-emerald:   var(--blue);
+  --accent-amber:     var(--blue);
 }
 
 /* ─── Base Reset ───────────────────────────────────────────────── */
@@ -142,7 +142,7 @@ body {
 
 /* ─── Buttons ───────────────────────────────────────────────────── */
 .btn-primary {
-  background: var(--ink);
+  background: var(--blue);
   color: #ffffff;
   border: none;
   border-radius: 100px;
@@ -158,9 +158,9 @@ body {
   gap: 8px;
 }
 .btn-primary:hover {
-  background: #333336;
+  background: var(--blue-hover);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 16px rgba(0, 113, 227, 0.3);
 }
 
 .btn-ghost {
@@ -179,8 +179,9 @@ body {
   gap: 8px;
 }
 .btn-ghost:hover {
-  border-color: var(--ink);
-  background: rgba(0,0,0,0.03);
+  border-color: var(--blue);
+  color: var(--blue);
+  background: rgba(0,113,227,0.03);
   transform: translateY(-1px);
 }
 
@@ -206,7 +207,7 @@ body {
 }
 
 .btn-success {
-  background: var(--green);
+  background: var(--blue);
   color: #ffffff;
   border: none;
   border-radius: 100px;
@@ -221,13 +222,13 @@ body {
   gap: 8px;
 }
 .btn-success:hover {
-  background: #178a47;
-  box-shadow: 0 4px 16px rgba(29,153,84,0.3);
+  background: var(--blue-hover);
+  box-shadow: 0 4px 16px rgba(0,113,227,0.3);
   transform: translateY(-1px);
 }
 
 .btn-danger {
-  background: var(--red);
+  background: var(--blue);
   color: #ffffff;
   border: none;
   border-radius: 100px;
@@ -242,19 +243,19 @@ body {
   gap: 8px;
 }
 .btn-danger:hover {
-  background: #c02922;
-  box-shadow: 0 4px 16px rgba(217,48,37,0.3);
+  background: var(--blue-hover);
+  box-shadow: 0 4px 16px rgba(0,113,227,0.3);
   transform: translateY(-1px);
 }
 
-/* Bid button — warm gold, pill */
+/* Bid button — blue pill */
 .btn-bid {
   min-height: 48px;
   padding: 13px 32px;
   font-size: 0.95rem;
   font-weight: 600;
   border-radius: 100px;
-  background: var(--gold);
+  background: var(--blue);
   color: #ffffff;
   border: none;
   cursor: pointer;
@@ -266,9 +267,9 @@ body {
   letter-spacing: 0.01em;
 }
 .btn-bid:hover {
-  background: #c97505;
+  background: var(--blue-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(217,119,6,0.35);
+  box-shadow: 0 6px 20px rgba(0,113,227,0.35);
 }
 
 /* ─── Cards ─────────────────────────────────────────────────────── */

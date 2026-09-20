@@ -221,18 +221,18 @@ export default function SupportClient() {
             <div
               style={{
                 padding: '16px',
-                background: 'rgba(239,68,68,0.06)',
-                border: '1px solid rgba(239,68,68,0.15)',
+                background: 'rgba(0,113,227,0.06)',
+                border: '1px solid rgba(0,113,227,0.15)',
                 borderRadius: 'var(--radius-lg)',
                 fontSize: '0.82rem',
                 lineHeight: 1.6,
               }}
             >
-              <strong style={{ color: 'var(--accent-red)' }}> Problem gambling?</strong>
+              <strong style={{ color: 'var(--accent-blue)' }}> Problem gambling?</strong>
               <br />
-              Call iCall: <a href="tel:9152987821" style={{ color: 'var(--accent-red)', fontWeight: 700 }}>9152987821</a>
+              Call iCall: <a href="tel:9152987821" style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>9152987821</a>
               {' or '}
-              <Link href="/responsible-gaming" style={{ color: 'var(--accent-red)' }}>set limits now</Link>
+              <Link href="/responsible-gaming" style={{ color: 'var(--accent-blue)' }}>set limits now</Link>
             </div>
           </div>
         </div>

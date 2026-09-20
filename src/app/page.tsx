@@ -11,7 +11,6 @@ import TuitionProgressTracker from '@/components/TuitionProgressTracker';
 import PurposeBanner from '@/components/PurposeBanner';
 import AboutMeSection from '@/components/AboutMeSection';
 import HowItWorksSection from '@/components/HowItWorksSection';
-import TestimonialsSection from '@/components/TestimonialsSection';
 import FAQAccordion from '@/components/FAQAccordion';
 import Footer from '@/components/Footer';
 import type { Ad, Category } from '@/lib/types';
@@ -131,11 +130,6 @@ export default function HomePage() {
 
         {/* How It Works */}
         <HowItWorksSection onStartBidding={() => setBidModalOpen(true)} />
-
-        <hr className="section-divider" />
-
-        {/* Testimonials */}
-        <TestimonialsSection />
 
         <hr className="section-divider" />
 

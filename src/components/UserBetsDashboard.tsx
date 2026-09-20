@@ -116,10 +116,10 @@ export default function UserBetsDashboard({ bets, onClaimWin }: UserBetsDashboar
                     <td style={{ padding: '14px', fontWeight: 600 }}>
                       ${bet.wagerAmount.toFixed(2)}
                     </td>
-                    <td style={{ padding: '14px', color: 'var(--accent-gold)', fontWeight: 700 }}>
+                    <td style={{ padding: '14px', color: 'var(--blue)', fontWeight: 700 }}>
                       {bet.odds.toFixed(2)}x
                     </td>
-                    <td style={{ padding: '14px', fontWeight: 800, color: 'var(--accent-green)' }}>
+                    <td style={{ padding: '14px', fontWeight: 800, color: 'var(--blue)' }}>
                       ${bet.potentialPayout.toFixed(2)}
                     </td>
                     <td style={{ padding: '14px' }}>

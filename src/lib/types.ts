@@ -10,6 +10,7 @@ export interface Ad {
   clicks: number;
   status: 'active' | 'pending' | 'rejected';
   stripePaymentId: string;
+  paypalOrderId?: string; // PayPal order ID (replaces stripePaymentId for new bids)
   createdAt: Date | string | number;
   updatedAt: Date | string | number;
   // Bidder identity (bidderEmail is never returned to the client)
@@ -18,6 +19,7 @@ export interface Ad {
   endsAt?: Date | string | number;
   bidderCount?: number;
   productImage?: string; // URL or emoji fallback
+  logoUrl?: string; // Optional custom app logo URL/base64
   auctionStatus?: AuctionStatus;
 }
 
@@ -31,6 +33,7 @@ export interface AdFormData {
   baseBid: number; // in dollars (converted to cents on submit)
   bidderName: string; // Display name for the leaderboard
   bidderEmail: string; // Private — for receipts only, never rendered
+  logoUrl?: string; // Optional custom app logo URL/base64
 }
 
 export interface PlinkoResult {

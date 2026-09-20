@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { CATEGORIES, type AdFormData, type Category } from '@/lib/types';
 import PlinkoGame from './PlinkoGame';
-import StripePaymentForm from './StripePaymentForm';
+import PayPalCheckout from './PayPalCheckout';
+import StepUpModal from './StepUpModal';
 
 interface BidModalProps {
   isOpen: boolean;
@@ -11,7 +12,7 @@ interface BidModalProps {
   onBidPlaced: () => void;
 }
 
-type Step = 'details' | 'payment' | 'plinko' | 'result';
+type Step = 'details' | 'payment' | 'plinko' | 'stepup' | 'result';
 
 export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps) {
   const [step, setStep] = useState<Step>('details');
@@ -24,10 +25,12 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
     bidderName: '',
     bidderEmail: '',
   });
-  const [clientSecret, setClientSecret] = useState('');
+  const [paypalOrderId, setPaypalOrderId] = useState('');
   const [paymentIntentId, setPaymentIntentId] = useState('');
   const [targetSlotIndices, setTargetSlotIndices] = useState<number[]>([]);
   const [finalMultiplier, setFinalMultiplier] = useState<number | null>(null);
+  const [steppedUp, setSteppedUp] = useState<boolean | null>(null);
+  const [stepEvaluated, setStepEvaluated] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -52,7 +55,7 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
     setLoading(true);
 
     try {
-      const res = await fetch('/api/create-payment-intent', {
+      const res = await fetch('/api/paypal/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: bidAmountCents, bidderName: formData.bidderName }),
@@ -60,20 +63,21 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to create payment');
+        throw new Error(errData.error || 'Failed to create PayPal order');
       }
       const data = await res.json();
 
       if (data.isAdminBypass) {
         // Bypass payment step directly for admin
-        handlePaymentSuccess(data.paymentIntentId);
+        handlePaymentSuccess(data.orderId);
         return;
       }
 
-      setClientSecret(data.clientSecret);
+      setPaypalOrderId(data.orderId);
       setStep('payment');
-    } catch (err: any) {
-      setError(err.message || 'Failed to initialize payment. Please try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to initialize payment. Please try again.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -102,43 +106,69 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
     }
   };
 
-  const handlePlinkoComplete = async (multiplier: number) => {
-    setFinalMultiplier(multiplier);
-    setLoading(true);
+  const handlePlinkoComplete = (oddsPct: number) => {
+    setFinalMultiplier(oddsPct);
+    setStep('stepup');
+  };
 
+  const submitAdToLeaderboard = async (isSuccess: boolean) => {
+    setLoading(true);
+    const mult = finalMultiplier || 35;
     try {
-      // Submit the ad
       const res = await fetch('/api/ads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           baseBid: bidAmountCents,
-          multiplier,
-          finalBid: Math.round(bidAmountCents * multiplier),
-          stripePaymentId: paymentIntentId,
+          multiplier: mult,
+          finalBid: Math.round(bidAmountCents * (isSuccess ? 1.5 : 1.0)),
+          paypalOrderId: paymentIntentId || 'demo-order-' + Date.now(),
         }),
       });
       if (!res.ok) throw new Error('Failed to submit ad');
-      setStep('result');
+      onBidPlaced();
     } catch {
-      setError('Failed to submit your ad. Contact support.');
+      setError('Failed to update leaderboard. Contact support.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    if (step === 'result') {
-      onBidPlaced();
+  const handleEvaluateStepUp = async () => {
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 600));
+
+    // Higher competitor comparison: if higher competitor has larger bid, reduce odds
+    const higherCompetitor = { name: 'Apex AI SaaS', bidAmount: 120 };
+    let adjustedOdds = Math.min(finalMultiplier || 35, 95);
+    if (higherCompetitor.bidAmount > formData.baseBid) {
+      const ratio = formData.baseBid / higherCompetitor.bidAmount;
+      adjustedOdds = Math.max(5, Math.round(adjustedOdds * Math.max(0.35, ratio)));
     }
+
+    const roll = Math.random() * 100;
+    const isWin = roll <= adjustedOdds;
+
+    setSteppedUp(isWin);
+    setStepEvaluated(true);
+    setLoading(false);
+
+    // Save ad immediately so it's guaranteed to show on the leaderboard!
+    await submitAdToLeaderboard(isWin);
+  };
+
+  const handleClose = () => {
+    onBidPlaced();
     // Reset state
     setStep('details');
     setFormData({ title: '', description: '', url: '', category: 'AI', baseBid: 10, bidderName: '', bidderEmail: '' });
-    setClientSecret('');
+    setPaypalOrderId('');
     setPaymentIntentId('');
     setTargetSlotIndices([]);
     setFinalMultiplier(null);
+    setSteppedUp(null);
+    setStepEvaluated(false);
     setError('');
     setLoading(false);
     onClose();
@@ -268,6 +298,65 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                App Logo <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                {/* Crop preview box (matching 44x44 leaderboard tile) */}
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 'var(--radius-md)',
+                    background: 'rgba(37, 99, 235, 0.08)',
+                    border: '1px solid rgba(0, 113, 227, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    color: '#2563eb',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                  }}
+                  title="Leaderboard Icon Preview"
+                >
+                  {formData.logoUrl ? (
+                    <img
+                      src={formData.logoUrl}
+                      alt="Logo preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    formData.title ? formData.title.charAt(0).toUpperCase() : 'A'
+                  )}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const result = event.target?.result as string;
+                          setFormData((prev) => ({ ...prev, logoUrl: result }));
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}
+                  />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                    Square image recommended (cropped automatically to fit leaderboard icon).
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
                 Category
               </label>
               <select
@@ -360,28 +449,9 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
         )}
 
         {/* Step 2: Payment */}
-        {step === 'payment' && clientSecret && (
+        {step === 'payment' && paypalOrderId && (
           <div className="animate-fade-in">
-            <div
-              style={{
-                padding: '12px 16px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                marginBottom: 20,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Base bid</span>
-              <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                ${formData.baseBid.toFixed(2)}
-              </span>
-            </div>
-
-            <StripePaymentForm
-              clientSecret={clientSecret}
+            <PayPalCheckout
               amount={bidAmountCents}
               onSuccess={handlePaymentSuccess}
               onError={(msg) => setError(msg)}
@@ -399,53 +469,146 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
           </div>
         )}
 
-        {/* Result */}
-        {step === 'result' && finalMultiplier !== null && (
+        {/* Step 4: Step Up Evaluation */}
+        {step === 'stepup' && (
           <div className="animate-fade-in" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: 8, marginTop: 16 }}>
-              Your final bid
-            </div>
-            <div
-              style={{
-                fontSize: '2.5rem',
-                fontWeight: 800,
-                color: finalMultiplier >= 5 ? '#22c55e' : finalMultiplier >= 2 ? 'var(--accent-gold)' : 'var(--text-primary)',
-                letterSpacing: '-0.03em',
-                marginBottom: 4,
-              }}
-            >
-              ${((bidAmountCents * finalMultiplier) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 24 }}>
-              ${formData.baseBid.toFixed(2)} × {finalMultiplier}× multiplier
-            </div>
+            {!stepEvaluated ? (
+              <div>
+                <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>⚡</div>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: '0 0 10px' }}>
+                  Step Up in Leaderboard?
+                </h2>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20 }}>
+                  You earned <strong style={{ color: 'var(--blue)' }}>+{finalMultiplier || 35}% Step-Up Odds</strong> from Plinko!
+                </p>
 
-            <div
-              style={{
-                padding: '16px',
-                borderRadius: 'var(--radius-lg)',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                marginBottom: 20,
-                textAlign: 'left',
-              }}
-            >
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>{formData.title}</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                {formData.description || 'No description'}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                {formData.category} • {formData.url}
-              </div>
-            </div>
+                {/* Competitor Bid Comparison Info */}
+                <div
+                  style={{
+                    padding: '14px',
+                    background: 'rgba(0, 113, 227, 0.06)',
+                    border: '1px solid rgba(0, 113, 227, 0.15)',
+                    borderRadius: 'var(--radius-md)',
+                    marginBottom: 24,
+                    textAlign: 'left',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 4 }}>
+                    Leaderboard Competitor Check
+                  </div>
+                  {formData.baseBid < 120 ? (
+                    <div>
+                      Competitor above (Apex AI SaaS) has a higher bid ($120 vs ${formData.baseBid}).
+                      Your step-up chance was adjusted from {finalMultiplier || 35}% to {Math.max(5, Math.round((finalMultiplier || 35) * Math.max(0.35, formData.baseBid / 120)))}%.
+                    </div>
+                  ) : (
+                    <div>You hold a competitive bid! Your full {finalMultiplier || 35}% step-up chance is active.</div>
+                  )}
+                </div>
 
-            <button
-              className="btn-primary"
-              onClick={handleClose}
-              style={{ width: '100%', padding: '14px', fontSize: '1rem' }}
-            >
-              View Leaderboard
-            </button>
+                <button
+                  className="btn-primary"
+                  onClick={handleEvaluateStepUp}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    minHeight: 48,
+                    fontSize: '1rem',
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                >
+                  {loading ? 'Evaluating Odds…' : 'Step Up in Leaderboard'}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ margin: '16px 0 20px' }}>
+                  {steppedUp ? (
+                    <div>
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 64,
+                          height: 64,
+                          borderRadius: '50%',
+                          background: 'rgba(34, 197, 94, 0.12)',
+                          border: '2px solid #22c55e',
+                          color: '#22c55e',
+                          fontSize: '2rem',
+                          marginBottom: 12,
+                        }}
+                      >
+                        ▲
+                      </div>
+                      <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#16a34a', margin: '0 0 8px' }}>
+                        You have stepped up by one tile 
+                      </h3>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                        Your app beat the odds and climbed +1 spot higher on the leaderboard!
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 64,
+                          height: 64,
+                          borderRadius: '50%',
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          border: '2px solid #ef4444',
+                          color: '#ef4444',
+                          fontSize: '2rem',
+                          marginBottom: 12,
+                        }}
+                      >
+                        ▼
+                      </div>
+                      <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#dc2626', margin: '0 0 8px' }}>
+                        Oops! You did not step up 
+                      </h3>
+                      <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                        The competitor above held their position due to their higher bid. Your base bid remains active!
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: 'var(--radius-lg)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    marginBottom: 20,
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>{formData.title}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    {formData.description || 'No description'}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                    {formData.category} • {formData.url}
+                  </div>
+                </div>
+
+                <button
+                  className="btn-primary"
+                  onClick={handleClose}
+                  style={{ width: '100%', padding: '14px', fontSize: '1rem' }}
+                >
+                  View Leaderboard
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

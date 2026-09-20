@@ -76,18 +76,18 @@ export default function HowItWorksPage() {
               <tbody>
                 {[
                   { mult: '0.5×', risk: 'All', prob: '10–25%', ev: '$5–$12.50', color: '#6b7280' },
-                  { mult: '1×', risk: 'Low/Med', prob: '20–25%', ev: '$20–$25', color: '#f59e0b' },
-                  { mult: '1.5×', risk: 'Low/Med', prob: '15–20%', ev: '$22.50–$30', color: '#f59e0b' },
-                  { mult: '2×', risk: 'Medium', prob: '15%', ev: '$30', color: 'var(--accent-gold)' },
-                  { mult: '3×', risk: 'Medium', prob: '10%', ev: '$30', color: 'var(--accent-gold)' },
-                  { mult: '5×', risk: 'High', prob: '7%', ev: '$35', color: '#84cc16' },
-                  { mult: '10×', risk: 'High', prob: '3%', ev: '$30', color: '#22c55e' },
+                  { mult: '1×', risk: 'Low/Med', prob: '20–25%', ev: '$20–$25', color: '#2563eb' },
+                  { mult: '1.5×', risk: 'Low/Med', prob: '15–20%', ev: '$22.50–$30', color: '#2563eb' },
+                  { mult: '2×', risk: 'Medium', prob: '15%', ev: '$30', color: '#2563eb' },
+                  { mult: '3×', risk: 'Medium', prob: '10%', ev: '$30', color: '#2563eb' },
+                  { mult: '5×', risk: 'High', prob: '7%', ev: '$35', color: '#2563eb' },
+                  { mult: '10×', risk: 'High', prob: '3%', ev: '$30', color: '#2563eb' },
                 ].map((row, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.15s' }}>
+                  <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.15s' }}>
                     <td style={{ padding: '12px 16px', fontWeight: 700, color: row.color }}>{row.mult}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{row.risk}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-primary)' }}>{row.prob}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--accent-green)', fontWeight: 600 }}>{row.ev}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--blue)', fontWeight: 600 }}>{row.ev}</td>
                   </tr>
                 ))}
               </tbody>

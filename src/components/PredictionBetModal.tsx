@@ -186,8 +186,8 @@ export default function PredictionBetModal({
             <div
               style={{
                 padding: '12px 16px',
-                background: 'rgba(34, 197, 94, 0.08)',
-                border: '1px solid rgba(34, 197, 94, 0.2)',
+                background: 'rgba(0, 113, 227, 0.08)',
+                border: '1px solid rgba(0, 113, 227, 0.2)',
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -195,7 +195,7 @@ export default function PredictionBetModal({
               }}
             >
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Potential Payout</span>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-green)' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
                 ${potentialPayout}
               </span>
             </div>
@@ -212,7 +212,7 @@ export default function PredictionBetModal({
             {/* Responsible Gaming Disclaimer */}
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
               ️ Predictions involve risk. Set your limits. Read our{' '}
-              <Link href="/responsible-gaming" style={{ color: 'var(--accent-amber)', textDecoration: 'underline' }}>
+              <Link href="/responsible-gaming" style={{ color: 'var(--accent-blue)', textDecoration: 'underline' }}>
                 Responsible Gaming Policy
               </Link>.
             </p>
@@ -231,13 +231,13 @@ export default function PredictionBetModal({
             <div
               style={{
                 padding: '16px',
-                background: 'rgba(245, 158, 11, 0.08)',
-                border: '1px solid rgba(245, 158, 11, 0.25)',
+                background: 'rgba(0, 113, 227, 0.08)',
+                border: '1px solid rgba(0, 113, 227, 0.25)',
                 borderRadius: 'var(--radius-lg)',
                 marginBottom: 20,
               }}
             >
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent-gold)', marginBottom: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent-blue)', marginBottom: 4 }}>
                  Double or Nothing via Plinko?
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 12 }}>
@@ -249,8 +249,8 @@ export default function PredictionBetModal({
                     width: '100%',
                     padding: '10px',
                     borderRadius: 'var(--radius-md)',
-                    background: 'var(--accent-gold)',
-                    color: '#000',
+                    background: 'var(--blue)',
+                    color: '#ffffff',
                     fontWeight: 800,
                     border: 'none',
                     cursor: 'pointer',

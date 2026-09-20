@@ -16,24 +16,24 @@ const STEPS = [
     title: 'Spin Plinko Multiplier',
     description:
       'Pass your bid through the provably fair Plinko drop. Hit a multiplier from 0.5x to 10x to multiply your bid power and leap up the rankings.',
-    accent: '#9333ea',
-    accentDim: 'rgba(147,51,234,0.08)',
+    accent: 'var(--blue)',
+    accentDim: 'var(--blue-dim)',
   },
   {
     number: 3,
     title: 'Fund College Tuition',
     description:
       '100% of bidding proceeds directly fund my $15,000 college degree. Track real-time progress as every bid brings us closer to graduation.',
-    accent: 'var(--green)',
-    accentDim: 'var(--green-dim)',
+    accent: 'var(--blue)',
+    accentDim: 'var(--blue-dim)',
   },
   {
     number: 4,
     title: 'Claim Prime Visibility',
     description:
       'Top-ranked apps get featured hero placement, verified sponsor badges, direct clickthrough traffic, and massive viral brand exposure.',
-    accent: 'var(--gold)',
-    accentDim: 'var(--gold-dim)',
+    accent: 'var(--blue)',
+    accentDim: 'var(--blue-dim)',
   },
 ];
 

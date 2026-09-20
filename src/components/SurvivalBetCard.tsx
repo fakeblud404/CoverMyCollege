@@ -53,7 +53,7 @@ export default function SurvivalBetCard({ app, onBetClick }: SurvivalBetCardProp
             <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>{app.name}</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               <span className="badge badge-category" style={{ fontSize: '0.62rem' }}>{app.category}</span>
-              <span>• Current: <strong style={{ color: 'var(--accent-gold)' }}>#{app.currentRank}</strong> in Top {app.totalRanked}</span>
+              <span>• Current: <strong style={{ color: 'var(--blue)' }}>#{app.currentRank}</strong> in Top {app.totalRanked}</span>
             </div>
           </div>
         </div>

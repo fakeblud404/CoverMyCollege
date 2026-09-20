@@ -56,7 +56,7 @@ export default function PrivacyPage() {
           },
           {
             title: '8. Contact Us',
-            content: `For any privacy-related questions or data requests, please contact our Data Protection Officer at privacy@appbids.in or via our support page.`,
+            content: `For any privacy-related questions or data requests, please contact our Data Protection Officer at support@covermycollege.com or via our support page.`,
           },
         ].map((section, i) => (
           <div key={i} style={{ marginBottom: 32 }}>
@@ -81,7 +81,7 @@ export default function PrivacyPage() {
           }}
         >
           Questions about your privacy? Email us at{' '}
-          <a href="mailto:privacy@appbids.in" style={{ color: 'var(--accent-blue)' }}>privacy@appbids.in</a>.
+          <a href="mailto:support@covermycollege.com" style={{ color: 'var(--accent-blue)' }}>support@covermycollege.com</a>.
         </div>
       </main>
 
