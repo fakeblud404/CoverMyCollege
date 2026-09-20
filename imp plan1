@@ -1,0 +1,331 @@
+# AppBids — Full Feature Overhaul Implementation Plan
+
+## Overview
+
+The existing codebase is a **Next.js 16 / React 19 / Tailwind v4 / Firebase / Stripe** app (the "pay-to-rank ad leaderboard with Plinko"). This plan overlays the 5-section feature request on top of the existing code with **minimal rework** — reusing all existing components and APIs where possible and adding new pages/components for new requirements.
+
+---
+
+## Architecture Summary (Existing)
+
+| Layer | Tech |
+|---|---|
+| Framework | Next.js 16, App Router, TypeScript |
+| Styling | Tailwind CSS v4 + CSS custom properties |
+| Database | Firebase Firestore |
+| Payments | Stripe |
+| Physics | Matter.js (Plinko canvas) |
+| State/RT | 30s polling → will keep + add SSE/WebSocket placeholders |
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Plinko is currently a *bid multiplier* game** (not a standalone game with deposits). The new request asks for it to also be a standalone `/plinko` page where users can drop balls for real money. This requires adding a separate "Plinko balance" concept or reusing Stripe for per-drop purchases. **This plan will implement a standalone demo/free Plinko mode** on `/plinko` with responsible-gaming controls, and leave `// TODO: BACKEND — connect real-money plinko balance` comments where wiring is needed.
+
+> [!IMPORTANT]
+> **Live Auctions vs Ad Leaderboard**: The request frames the app as a "live auction" product (auction countdowns, product images, bidders count). The existing app is an *advertising leaderboard* (bids for ad rank). This plan **keeps the existing leaderboard as the "Live Auctions" section** and adds auction-style UX (countdowns, product images, bidder count) to the existing leaderboard cards. The data model will be extended with optional `endsAt` and `bidderCount` fields.
+
+> [!WARNING]
+> **Responsible Gaming (Plinko)** — KYC/age verification and self-exclusion must be enforced on the server side before real-money play. This plan adds all UI/UX surfaces (limits form, self-exclusion toggle, reality check pop-ups, helpline links) but **leaves server-side enforcement as `// TODO` comments** since the backend auth/KYC system is not yet built.
+
+> [!CAUTION]
+> **No breaking changes to existing API routes** — all existing `/api/ads`, `/api/plinko`, `/api/create-payment-intent` routes remain unchanged. New routes are additive.
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Auction countdown end time**: Should existing leaderboard ads have a randomly-generated `endsAt` for demo purposes, or should the data model be migrated in Firestore? **Decision for this plan**: Generate random demo countdowns client-side only; real data from Firestore when `endsAt` field exists.
+
+> [!IMPORTANT]
+> **Winners gallery data source**: Should winners be seeded (static demo) or pulled from Firestore? **Decision**: Static demo data with `// TODO: BACKEND` comment for real integration.
+
+---
+
+## Proposed Changes
+
+### Component 1 — Types & Shared Lib
+
+#### [MODIFY] [types.ts](file:///d:/App%20Bidding/app-bidding/src/lib/types.ts)
+- Add `endsAt?: Date`, `bidderCount?: number`, `productImage?: string` to `Ad` interface
+- Add `AuctionStatus` type: `'live' | 'ending-soon' | 'closed'`
+- Add `Winner` interface for winners gallery
+- Add `ResponsibleGamingSettings` interface
+- Add `PlinkoSession` interface for standalone Plinko stats
+
+---
+
+### Component 2 — Global Styles
+
+#### [MODIFY] [globals.css](file:///d:/App%20Bidding/app-bidding/src/app/globals.css)
+- Add `--accent-emerald`, `--status-live`, `--status-ending`, `--status-closed` color tokens
+- Add `.btn-bid` (large, green, thumb-friendly ≥44px) utility class
+- Add `.status-live`, `.status-ending`, `.status-closed` badge styles
+- Add `.winner-ticker` keyframe animation (marquee)
+- Add `.sticky-bid-bar` mobile sticky bar styles
+- Add pulse/glow animations for live auctions
+- Add countdown timer digit styles
+
+---
+
+### Component 3 — Header (Nav Overhaul)
+
+#### [MODIFY] [Header.tsx](file:///d:/App%20Bidding/app-bidding/src/components/Header.tsx)
+- Add navigation links: **Live Auctions | How It Works | Plinko | Winners**
+- Add mobile hamburger menu
+- Keep "Place a Bid" CTA + add "How It Works" sticky button
+- Make mobile-responsive with collapsible nav
+
+---
+
+### Component 4 — Homepage Hero
+
+#### [MODIFY] [LeaderboardHero.tsx](file:///d:/App%20Bidding/app-bidding/src/components/LeaderboardHero.tsx)
+- Replace current compact hero with full-width hero section:
+  - Headline: *"Bid on real products in live auctions — fast, fair, and mobile-first"*
+  - Subtext + live stats (active auctions count, total bids)
+  - Primary CTA: **Start Bidding** → opens BidModal
+  - Secondary CTA: **How It Works** → scrolls to section / links `/how-it-works`
+  - Animated background with floating bid amounts
+
+#### [NEW] [WinnerTicker.tsx](file:///d:/App%20Bidding/app-bidding/src/components/WinnerTicker.tsx)
+- Marquee-style ticker showing recent winners: *"Rahul just won iPhone 15 — ₹12,499 🎉"*
+- Data from static demo array + `// TODO: BACKEND — fetch from /api/winners`
+- Green background, auto-scroll animation
+
+---
+
+### Component 5 — Auction Cards (Leaderboard Enhancement)
+
+#### [MODIFY] [LeaderboardEntry.tsx](file:///d:/App%20Bidding/app-bidding/src/components/LeaderboardEntry.tsx)
+- Upgrade to larger auction card layout:
+  - Product image (placeholder generated image or emoji icon)
+  - Current bid (large)
+  - **Countdown timer** (live, color-coded: green→yellow→red)
+  - Bidder count badge
+  - Big **"Bid"** button (≥44px, green, high-contrast)
+  - Status indicator: `LIVE` / `ENDING SOON` / `CLOSED` with color coding
+- Keep existing rank/gold glow for #1
+
+---
+
+### Component 6 — New Homepage Sections
+
+#### [MODIFY] [page.tsx](file:///d:/App%20Bidding/app-bidding/src/app/page.tsx)
+- Add WinnerTicker below hero
+- Add "How It Works" section with 4 steps + icons
+- Add "Testimonials" section (3 cards, static demo data)
+- Add "FAQ" accordion (5 questions)
+- Add footer with: SSL badge, payment icons, links to Terms/Privacy/Responsible Gaming
+- Mobile sticky "Bid" bar at bottom
+- Keep existing leaderboard as "Live Auctions" section
+
+---
+
+### Component 7 — New Pages
+
+#### [NEW] `src/app/live-auctions/page.tsx`
+- Full-page version of the leaderboard with enhanced auction cards
+- Hero with live stats counter
+- Filter by category + sort options
+- Real-time update indicator
+
+#### [NEW] `src/app/how-it-works/page.tsx`
+- Step-by-step: 1. Browse → 2. Bid → 3. Plinko Multiplier → 4. Win
+- Visual step cards with icons
+- Video placeholder with `// TODO: embed demo video`
+- Transparent pricing section (platform fees, shipping info, payment methods)
+- CTA at bottom → Start Bidding
+
+#### [NEW] `src/app/plinko/page.tsx`
+- Full standalone Plinko page:
+  - **Risk level selector**: Low / Medium / High (changes multiplier distribution)
+  - **Row selector**: 8–16 rows
+  - **Multiplier visualization** grid below slots with color gradient (green→yellow→red)
+  - **Provably fair**: display seed/hash with copy button
+  - **Auto-drop mode** with cooldown slider
+  - **Session stats panel**: total dropped, net win/loss, biggest win, RTP%
+  - **Responsible gaming panel**: deposit limit, loss limit, time limit, session time display
+  - **Self-exclusion toggle** + cooling-off selector
+  - **Reality check pop-up** (modal after X minutes)
+  - **Age verification gate** (checkbox + `// TODO: BACKEND — KYC verify`)
+  - **Problem gambling helpline links** (prominently displayed)
+  - RTP table (multiplier, probability, expected value)
+  - Connect to existing `PlinkoGame.tsx` canvas component
+
+#### [NEW] `src/app/winners/page.tsx`
+- Winners gallery grid: avatar, name, item won, amount, date
+- "Biggest Plinko Win This Week" leaderboard sidebar
+- "Most Auctions Won" leaderboard
+- Recent wins feed
+- `// TODO: BACKEND — fetch from /api/winners`
+
+#### [NEW] `src/app/responsible-gaming/page.tsx`
+- Limit settings form: daily/weekly/monthly deposit + loss limits
+- Self-exclusion: 1 day / 1 week / 1 month / permanent toggle
+- Cooling-off period selector
+- Problem gambling resources section:
+  - National helpline numbers (India: iCall, SAMHSA equivalent)
+  - Links to external support sites
+  - BeGambleAware-style disclaimer text
+- Reality check frequency setting
+- Activity history overview (sessions, amounts)
+
+#### [NEW] `src/app/faq/page.tsx`
+- FAQ accordion component (12 questions/answers)
+- Categories: Bidding, Plinko, Payments, Account, Responsible Gaming
+
+#### [NEW] `src/app/support/page.tsx`
+- Contact form (name, email, subject, message)
+- Ticket submission with `// TODO: BACKEND — send to support email/helpdesk`
+- Live chat placeholder with "Chat coming soon" notice
+- FAQ quick links
+
+#### [NEW] `src/app/terms/page.tsx`
+- Full Terms of Service (template with key sections)
+- Responsible gaming terms section
+
+#### [NEW] `src/app/privacy/page.tsx`
+- Privacy policy (template)
+
+---
+
+### Component 8 — Shared New Components
+
+#### [NEW] `src/components/CountdownTimer.tsx`
+- Reusable countdown: days/hours/minutes/seconds
+- Color transitions: green → yellow (< 1 hour) → red (< 10 min) → gray (ended)
+- Pulse animation when ending soon
+
+#### [NEW] `src/components/AuctionCard.tsx`
+- Large auction card for `/live-auctions` page
+- Product image, title, current bid, countdown, bidders, "Bid Now" button
+
+#### [NEW] `src/components/HowItWorksSection.tsx`
+- 4-step visual guide component (reusable on homepage and `/how-it-works`)
+
+#### [NEW] `src/components/TestimonialsSection.tsx`
+- 3 testimonial cards with avatar, name, quote, star rating
+
+#### [NEW] `src/components/FAQAccordion.tsx`
+- Animated expand/collapse FAQ items
+
+#### [NEW] `src/components/Footer.tsx`
+- SSL badge, payment icons (Visa/MC/UPI/Stripe), copyright
+- Links: Terms | Privacy | Responsible Gaming | FAQ | Support | Contact
+
+#### [NEW] `src/components/StickyBidBar.tsx`
+- Mobile-only sticky bottom bar with "Bid Now" button (shows on scroll)
+- Hides on desktop (`display: none` above 768px)
+
+#### [NEW] `src/components/RealityCheckModal.tsx`
+- Modal appearing after configurable time (default 30min)
+- Shows session time, amount spent, gives option to continue/stop
+
+#### [NEW] `src/components/PlinkoStandaloneGame.tsx`
+- Wraps existing `PlinkoGame.tsx` with:
+  - Risk level controls
+  - Row count controls
+  - Auto-drop mode
+  - Session stats tracking
+  - Provably fair seed display
+  - Responsible gaming controls (inline)
+
+#### [NEW] `src/components/LeaderboardSidebar.tsx`
+- Winners leaderboards sidebar for `/winners` page
+
+---
+
+### Component 9 — API Routes (New)
+
+#### [NEW] `src/app/api/winners/route.ts`
+- `GET /api/winners` — returns recent winners (demo data + `// TODO: real Firestore query`)
+
+#### [NEW] `src/app/api/responsible-gaming/route.ts`
+- `GET/POST /api/responsible-gaming` — save/load user limit settings (localStorage for now + `// TODO: persist to Firestore with auth`)
+
+#### [NEW] `src/app/api/plinko/session/route.ts`
+- `POST /api/plinko/session` — record a standalone Plinko game session (for RTP stats)
+
+---
+
+### Component 10 — Environment Variables
+
+#### [MODIFY] [.env.local.example](file:///d:/App%20Bidding/app-bidding/.env.local.example)
+- Add `NEXT_PUBLIC_PLINKO_PROVABLY_FAIR_SECRET=` placeholder
+- Add `NEXT_PUBLIC_SUPPORT_EMAIL=` placeholder
+- Add `NEXT_PUBLIC_HELPLINE_NUMBER=` placeholder
+
+---
+
+## New Pages — File Tree Addition
+
+```
+src/app/
+├── live-auctions/page.tsx        [NEW]
+├── how-it-works/page.tsx         [NEW]
+├── plinko/page.tsx               [NEW]
+├── winners/page.tsx              [NEW]
+├── responsible-gaming/page.tsx   [NEW]
+├── faq/page.tsx                  [NEW]
+├── support/page.tsx              [NEW]
+├── terms/page.tsx                [NEW]
+└── privacy/page.tsx              [NEW]
+
+src/components/
+├── CountdownTimer.tsx            [NEW]
+├── AuctionCard.tsx               [NEW]
+├── WinnerTicker.tsx              [NEW]
+├── HowItWorksSection.tsx         [NEW]
+├── TestimonialsSection.tsx       [NEW]
+├── FAQAccordion.tsx              [NEW]
+├── Footer.tsx                    [NEW]
+├── StickyBidBar.tsx              [NEW]
+├── RealityCheckModal.tsx         [NEW]
+├── PlinkoStandaloneGame.tsx      [NEW]
+└── LeaderboardSidebar.tsx        [NEW]
+
+src/app/api/
+├── winners/route.ts              [NEW]
+├── responsible-gaming/route.ts   [NEW]
+└── plinko/session/route.ts       [NEW]
+```
+
+---
+
+## Implementation Sequence
+
+1. **Types & CSS tokens** — extend `types.ts` + `globals.css`
+2. **Shared components** — CountdownTimer, Footer, WinnerTicker, FAQAccordion, HowItWorksSection, Testimonials, StickyBidBar
+3. **Homepage overhaul** — update LeaderboardHero, page.tsx, LeaderboardEntry with auction card UI
+4. **Header nav** — add links + mobile menu
+5. **New pages** — live-auctions, how-it-works, plinko, winners, responsible-gaming, faq, support, terms, privacy
+6. **New API routes** — winners, responsible-gaming, plinko/session
+7. **Plinko standalone** — PlinkoStandaloneGame with all responsible gaming controls
+8. **RealityCheckModal** — session timer pop-up
+9. **Env vars** — update .env.local.example
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+npm run build   # TypeScript compile + Next.js build
+npm run lint    # ESLint
+```
+
+### Manual Verification
+1. Homepage loads with hero, winner ticker, auction cards with countdowns, how-it-works, testimonials, FAQ, footer
+2. All nav links work: `/live-auctions`, `/how-it-works`, `/plinko`, `/winners`, `/responsible-gaming`, `/faq`, `/support`, `/terms`, `/privacy`
+3. Countdown timers animate live
+4. Bid button is ≥44px and opens BidModal
+5. Mobile sticky bid bar appears on scroll on mobile viewport
+6. Plinko page: risk levels change multipliers, row selector works, session stats update, responsible gaming controls display
+7. Reality check modal fires after simulated time (reduce timer for testing)
+8. Winner ticker scrolls smoothly
+9. Footer has SSL badge + payment icons + correct links
+10. All pages are responsive at 375px

@@ -1,0 +1,351 @@
+# Pay-to-Rank Advertising Leaderboard with Plinko Game
+
+A real-time, outbid.lol-inspired advertising leaderboard where users bid for rank positions. Bids pass through a Plinko multiplier game that amplifies (or reduces) the base bid before placement.
+
+## User Choices
+
+| Decision | Choice |
+|----------|--------|
+| CSS Framework | **Tailwind CSS v4** (CSS-first config) |
+| Database & Real-time | **Firebase** (Firestore + Realtime features) |
+| Payments | **Stripe** (real payment processing) |
+
+## Architecture Overview
+
+```mermaid
+graph TD
+    A["Next.js App (App Router)"] --> B["API Routes"]
+    B --> C["Firebase Firestore"]
+    B --> D["Stripe API"]
+    A --> E["Client Components"]
+    E --> F["Leaderboard (SSE real-time)"]
+    E --> G["Plinko Game (Canvas)"]
+    E --> H["Admin Dashboard"]
+    B --> I["Server-Side RNG (Plinko)"]
+    C --> F
+```
+
+## Proposed Changes
+
+### 1. Project Scaffold
+
+#### [NEW] Next.js 15 App with Tailwind v4
+
+Initialize with `npx -y create-next-app@latest` in the workspace root. Configuration:
+- App Router
+- TypeScript
+- Tailwind CSS v4
+- ESLint
+- `src/` directory
+
+Install additional deps:
+- `firebase` + `firebase-admin` — Firestore client & admin SDK
+- `stripe` + `@stripe/stripe-js` — server & client Stripe SDK
+- `matter-js` — lightweight 2D physics engine for Plinko simulation
+- `date-fns` — relative timestamps ("18 minutes ago")
+
+---
+
+### 2. Design System & Global Styles
+
+#### [NEW] `src/app/globals.css`
+
+Dark theme CSS tokens matching outbid.lol:
+
+| Token | Value | Purpose |
+|-------|-------|---------|
+| `--bg-primary` | `#0a0a0a` | Page background |
+| `--bg-card` | `#111111` | Leaderboard row |
+| `--bg-card-hover` | `#1a1a1a` | Row hover state |
+| `--text-primary` | `#ffffff` | Headings, bid amounts |
+| `--text-secondary` | `#a0a0a0` | Descriptions, metadata |
+| `--text-muted` | `#666666` | Timestamps |
+| `--accent-gold` | `#f5a623` | #1 spot glow, highlight |
+| `--accent-blue` | `#3b82f6` | CTA buttons, links |
+| `--border` | `#222222` | Card borders |
+
+Typography: **Inter** from Google Fonts, loaded via `next/font/google`.
+
+---
+
+### 3. Firebase Setup
+
+#### [NEW] `src/lib/firebase.ts` — Client SDK init
+#### [NEW] `src/lib/firebase-admin.ts` — Admin SDK init (server-side only)
+
+Firestore collection: **`ads`**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Auto-generated doc ID |
+| `title` | `string` | Ad headline |
+| `description` | `string` | 1–2 sentence description |
+| `url` | `string` | Advertiser's website |
+| `category` | `string` | Tag (AI, SEO, Crypto, etc.) |
+| `baseBid` | `number` | Original bid in cents |
+| `multiplier` | `number` | Plinko result (e.g., 3.4) |
+| `finalBid` | `number` | baseBid × multiplier |
+| `clicks` | `number` | Visit click counter |
+| `status` | `string` | `active` / `pending` / `rejected` |
+| `stripePaymentId` | `string` | Stripe PaymentIntent ID |
+| `createdAt` | `timestamp` | Bid submission time |
+| `updatedAt` | `timestamp` | Last update |
+
+> [!IMPORTANT]
+> You'll need to provide Firebase project credentials. I'll create a `.env.local.example` file with the required environment variables. You'll need to:
+> 1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
+> 2. Enable Firestore in your project
+> 3. Generate a service account key for the admin SDK
+> 4. Copy the web app config values
+
+---
+
+### 4. Stripe Integration
+
+#### [NEW] `src/lib/stripe.ts` — Server-side Stripe client
+#### [NEW] `src/app/api/create-payment-intent/route.ts` — Creates PaymentIntent for the base bid
+#### [NEW] `src/app/api/webhooks/stripe/route.ts` — Handles `payment_intent.succeeded` events
+
+Flow:
+1. User enters base bid → API creates Stripe PaymentIntent
+2. Client collects card info via Stripe Elements
+3. On success → user plays Plinko → multiplier is applied server-side
+4. Final bid written to Firestore
+
+> [!IMPORTANT]
+> You'll need Stripe API keys. I'll create env var placeholders. For testing, use Stripe test mode keys:
+> - `STRIPE_SECRET_KEY` (starts with `sk_test_`)
+> - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (starts with `pk_test_`)
+> - `STRIPE_WEBHOOK_SECRET` (starts with `whsec_`)
+
+---
+
+### 5. Plinko Game Engine
+
+#### [NEW] `src/components/PlinkoGame.tsx`
+
+A canvas-based Plinko simulation using **Matter.js** physics:
+
+- **Board**: 8 rows of pegs, 9 slots at bottom
+- **Multipliers**: `[0.5×, 0.8×, 1×, 1.5×, 2×, 1.5×, 1×, 0.8×, 0.5×]` (symmetric — center slots are more likely but pay less; edge slots are rare but pay 5× or 10×)
+- Alternative high-variance config: `[10×, 5×, 2×, 1×, 0.5×, 1×, 2×, 5×, 10×]`
+- **Animation**: Ball drops from random x-offset at top, bounces through pegs, lands in ~2-3 seconds
+- **Server authority**: Multiplier is pre-determined server-side via cryptographic RNG (`crypto.getRandomValues`). Client animation is cosmetic only — the ball is guided to land in the predetermined slot.
+- **Visual**: Dark card with neon-colored pegs, glowing ball, slot labels with multiplier values
+
+#### [NEW] `src/app/api/plinko/route.ts` — Server-side multiplier generation
+
+Weighted random distribution:
+| Multiplier | Weight | Probability |
+|-----------|--------|-------------|
+| 0.5× | 25 | 25% |
+| 0.8× | 20 | 20% |
+| 1× | 20 | 20% |
+| 1.5× | 15 | 15% |
+| 2× | 10 | 10% |
+| 5× | 7 | 7% |
+| 10× | 3 | 3% |
+
+---
+
+### 6. Leaderboard Page (Main UI)
+
+#### [NEW] `src/app/page.tsx` — Main leaderboard page
+#### [NEW] `src/components/LeaderboardEntry.tsx` — Individual ad row
+#### [NEW] `src/components/Header.tsx` — Top bar with logo + "Place Bid" CTA
+#### [NEW] `src/components/CategoryFilter.tsx` — Horizontal filter bar
+#### [NEW] `src/components/RecentMultipliersTicker.tsx` — Bottom ticker
+
+**Layout** (matching outbid.lol):
+
+```
+┌─────────────────────────────────────────┐
+│  Logo          [Categories]  [Place Bid]│  ← Header
+├─────────────────────────────────────────┤
+│  #1  $17,000  "Acme AI Tools"          │  ← Gold glow, highlighted
+│       AI  •  43,586 clicks  •  18m ago  │
+├─────────────────────────────────────────┤
+│  #2  $12,500  "SEO Wizard Pro"         │  ← Standard dark row
+│       SEO  •  28,441 clicks  •  2h ago  │
+├─────────────────────────────────────────┤
+│  #3  $8,200   "CryptoTrack"            │
+│       Crypto  •  15,220 clicks  •  5h   │
+├─────────────────────────────────────────┤
+│  ... (scrollable)                       │
+├─────────────────────────────────────────┤
+│  🎰 Company X just got 5.2× on $10k!   │  ← Ticker
+└─────────────────────────────────────────┘
+```
+
+**#1 Spot Treatment:**
+- Gold accent border-left (4px solid `#f5a623`)
+- Subtle gold glow (`box-shadow: 0 0 30px rgba(245,166,35,0.15)`)
+- Slightly larger bid font
+- "👑" icon or gold rank badge
+
+**Real-time**: Firestore `onSnapshot` listener for live updates — rows animate/reorder when new bids arrive.
+
+---
+
+### 7. Bid Placement Modal
+
+#### [NEW] `src/components/BidModal.tsx` — Full bid flow modal
+#### [NEW] `src/components/StripePaymentForm.tsx` — Card input via Stripe Elements
+
+**Flow (3 steps inside modal):**
+
+```mermaid
+graph LR
+    A["Step 1: Ad Details\n+ Base Bid Amount"] --> B["Step 2: Payment\n(Stripe Elements)"]
+    B --> C["Step 3: Plinko Game\n(Drop Ball)"]
+    C --> D["Result: Final Bid\n+ Confirm Submission"]
+```
+
+Step 1: Form fields — title, description, URL, category dropdown, base bid amount
+Step 2: Stripe card input, pay button
+Step 3: Plinko canvas, "Drop Ball" button, result display with confetti for high multipliers
+
+---
+
+### 8. Click Tracking
+
+#### [NEW] `src/app/api/track-click/route.ts`
+
+When a user clicks "Visit" on a leaderboard entry:
+1. Increment `clicks` field in Firestore (atomic increment)
+2. Redirect to advertiser URL
+3. Rate-limit by IP to prevent abuse
+
+---
+
+### 9. Admin Dashboard
+
+#### [NEW] `src/app/admin/page.tsx` — Admin panel
+#### [NEW] `src/app/admin/layout.tsx` — Admin layout with simple auth
+#### [NEW] `src/components/admin/AdTable.tsx` — Manage all ads
+#### [NEW] `src/components/admin/Analytics.tsx` — Basic stats
+
+Features:
+- Table of all ads with approve/reject/delete actions
+- Filter by status (active, pending, rejected)
+- Basic analytics: total revenue, total clicks, top categories
+- Password-protected via environment variable (`ADMIN_PASSWORD`)
+
+---
+
+### 10. API Routes Summary
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/api/ads` | `GET` | Fetch leaderboard (sorted by finalBid desc) |
+| `/api/ads` | `POST` | Submit new ad after payment + Plinko |
+| `/api/ads/[id]/approve` | `PATCH` | Admin: approve a pending ad |
+| `/api/ads/[id]/reject` | `PATCH` | Admin: reject a pending ad |
+| `/api/create-payment-intent` | `POST` | Create Stripe PaymentIntent |
+| `/api/webhooks/stripe` | `POST` | Stripe webhook handler |
+| `/api/plinko` | `POST` | Generate server-side multiplier |
+| `/api/track-click` | `POST` | Increment click count + redirect |
+| `/api/admin/stats` | `GET` | Admin analytics data |
+
+---
+
+### 11. Environment Variables
+
+#### [NEW] `.env.local.example`
+
+```env
+# Firebase
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+FIREBASE_SERVICE_ACCOUNT_KEY=  # JSON string, base64 encoded
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Admin
+ADMIN_PASSWORD=your-secure-admin-password
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Auto-approve or manual review?** Should new ads go live immediately after payment, or require admin approval first? I'm defaulting to **auto-approve** for frictionless UX but can add a review queue.
+
+> [!IMPORTANT]
+> **Bid expiration?** Should bids expire after a time period (e.g., 30 days), or persist indefinitely? Outbid.lol seems to persist them. I'll default to **no expiration**.
+
+> [!IMPORTANT]
+> **Rebidding?** Can an advertiser re-bid to increase their rank, or is each bid a separate entry? I'll default to **each bid is a separate entry** (simpler), but can support re-bidding on existing entries.
+
+---
+
+## File Tree (Final)
+
+```
+src/
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── page.tsx                          # Main leaderboard
+│   ├── admin/
+│   │   ├── layout.tsx
+│   │   └── page.tsx                      # Admin dashboard
+│   └── api/
+│       ├── ads/
+│       │   ├── route.ts                  # GET/POST ads
+│       │   └── [id]/
+│       │       ├── approve/route.ts
+│       │       └── reject/route.ts
+│       ├── create-payment-intent/route.ts
+│       ├── plinko/route.ts
+│       ├── track-click/route.ts
+│       ├── admin/stats/route.ts
+│       └── webhooks/stripe/route.ts
+├── components/
+│   ├── Header.tsx
+│   ├── LeaderboardEntry.tsx
+│   ├── CategoryFilter.tsx
+│   ├── RecentMultipliersTicker.tsx
+│   ├── BidModal.tsx
+│   ├── PlinkoGame.tsx
+│   ├── StripePaymentForm.tsx
+│   └── admin/
+│       ├── AdTable.tsx
+│       └── Analytics.tsx
+└── lib/
+    ├── firebase.ts
+    ├── firebase-admin.ts
+    ├── stripe.ts
+    └── types.ts
+```
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+npm run build     # Ensure production build succeeds
+npm run lint      # No ESLint errors
+```
+
+### Manual Verification
+1. **Leaderboard renders** — seed 10+ demo ads, verify sort order, #1 highlight, category filters
+2. **Plinko game** — drop ball, verify animation completes in ~2-3s, multiplier matches server response
+3. **Stripe flow** — use test card `4242 4242 4242 4242`, verify PaymentIntent succeeds
+4. **Real-time** — open two browser tabs, submit bid in one, verify leaderboard updates in the other
+5. **Click tracking** — click "Visit", verify click count increments
+6. **Admin panel** — login, approve/reject ads, view analytics
+7. **Mobile** — verify responsive layout on 375px viewport
+8. **Ticker** — verify recent multiplier events appear at bottom
