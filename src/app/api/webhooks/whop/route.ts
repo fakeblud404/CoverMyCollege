@@ -87,13 +87,16 @@ export async function POST(request: NextRequest) {
         }
 
         if (userId) {
+          const verifiedAmountCents = Number(metadata.amountCents) || Math.round(Number(eventData?.amount || 0) * 100) || 100;
+          const targetAdId = metadata.targetAdId;
+
           const entitlementData = {
             userId,
             hasAccess: true,
             status: 'active',
             planId: planId || expectedPlanId || 'one_time_unlock',
             paymentId,
-            amount: eventData?.amount || eventData?.final_amount || 0,
+            amount: verifiedAmountCents,
             currency: eventData?.currency || 'usd',
             unlockedAt: new Date(),
             updatedAt: new Date(),
@@ -106,6 +109,7 @@ export async function POST(request: NextRequest) {
             await adminDb.collection('purchases').doc(paymentId).set({
               ...entitlementData,
               eventId,
+              targetAdId: targetAdId || null,
               rawEventData: eventData,
             });
           } catch (dbErr) {
@@ -115,6 +119,73 @@ export async function POST(request: NextRequest) {
           // Always sync in-memory for instant resilience
           globalThis.__MEMO_USER_ENTITLEMENTS?.set(userId, entitlementData);
           console.log(`[Whop Webhook] Granted paid features to user: ${userId}`);
+
+          // Update Leaderboard: Boost existing listing or activate new listing
+          if (targetAdId) {
+            try {
+              const adRef = adminDb.collection('ads').doc(targetAdId);
+              const snap = await adRef.get();
+              if (snap.exists) {
+                const current = snap.data();
+                const mult = current?.multiplier || 1.0;
+                const newBaseBid = (current?.baseBid || 0) + verifiedAmountCents;
+                const newFinalBid = Math.round(newBaseBid * mult);
+                await adRef.update({
+                  baseBid: newBaseBid,
+                  finalBid: newFinalBid,
+                  whopPaymentId: paymentId,
+                  updatedAt: new Date(),
+                });
+              }
+            } catch (adErr) {
+              console.warn('[Whop Webhook] Error updating target ad in Firestore:', adErr);
+            }
+
+            if (globalThis.__MEMO_ADS_STORE) {
+              const item = globalThis.__MEMO_ADS_STORE.find((a) => a.id === targetAdId);
+              if (item) {
+                item.baseBid = (item.baseBid || 0) + verifiedAmountCents;
+                item.finalBid = Math.round(item.baseBid * (item.multiplier || 1.0));
+              }
+            }
+          } else if (metadata.adTitle && metadata.adUrl) {
+            // New ad listing created through hosted checkout
+            const mult = parseFloat(metadata.multiplier || '1.0') || 1.0;
+            const finalBid = Math.round(verifiedAmountCents * mult);
+            const now = new Date();
+            const newListing = {
+              title: metadata.adTitle,
+              description: '',
+              url: metadata.adUrl,
+              category: metadata.adCategory || 'Other',
+              baseBid: verifiedAmountCents,
+              multiplier: mult,
+              finalBid,
+              clicks: 0,
+              status: 'active',
+              whopPaymentId: paymentId,
+              bidderName: metadata.bidderName || 'Anonymous',
+              bidderEmail: metadata.bidderEmail || '',
+              logoUrl: metadata.logoUrl || null,
+              createdAt: now,
+              updatedAt: now,
+              endsAt: new Date(now.getTime() + 7 * 86400000),
+            };
+
+            let createdId = 'whop-' + Math.random().toString(36).substring(2, 9);
+            try {
+              const docRef = await adminDb.collection('ads').add(newListing);
+              createdId = docRef.id;
+            } catch (createErr) {
+              console.warn('[Whop Webhook] Error creating new ad listing:', createErr);
+            }
+
+            if (!globalThis.__MEMO_ADS_STORE) {
+              globalThis.__MEMO_ADS_STORE = [];
+            }
+            const { bidderEmail: _omit, ...publicListing } = newListing;
+            globalThis.__MEMO_ADS_STORE.unshift({ id: createdId, ...publicListing });
+          }
         } else {
           console.warn(`[Whop Webhook] payment.succeeded event missing userId in metadata`);
         }

@@ -55,10 +55,38 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
     }
     setError('');
 
-    // If Whop is selected, proceed directly to payment step to render Whop Elements
+    // If Whop is selected, initiate Whop hosted checkout session and redirect user
     if (paymentMethod === 'whop') {
-      setStep('payment');
-      return;
+      setLoading(true);
+      try {
+        const res = await fetch('/api/whop/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: bidAmountCents,
+            adData: formData,
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to initialize Whop hosted checkout');
+        }
+
+        const data = await res.json();
+        if (data.checkoutUrl) {
+          // Direct user to Whop's hosted checkout page
+          window.location.href = data.checkoutUrl;
+          return;
+        } else {
+          throw new Error('No checkout URL received from Whop.');
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Failed to redirect to Whop checkout.';
+        setError(msg);
+        setLoading(false);
+        return;
+      }
     }
 
     setLoading(true);
@@ -502,7 +530,11 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                 opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? 'Setting up...' : `Continue to Payment — $${formData.baseBid.toFixed(2)}`}
+              {loading
+                ? 'Redirecting to Whop...'
+                : paymentMethod === 'whop'
+                ? `Continue to Whop Checkout — $${formData.baseBid.toFixed(2)}`
+                : `Continue to Payment — $${formData.baseBid.toFixed(2)}`}
             </button>
           </div>
         )}

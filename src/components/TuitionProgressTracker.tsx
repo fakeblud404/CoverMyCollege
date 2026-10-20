@@ -74,7 +74,12 @@ export default function TuitionProgressTracker({
         }}
       >
         {/* Label */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <img
+            src="/logo.png"
+            alt="Cover My College"
+            style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'contain' }}
+          />
           <span
             style={{
               width: 7,

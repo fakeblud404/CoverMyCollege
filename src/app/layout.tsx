@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   description:
     "Apps spend money to rank #1 on our live ad leaderboard while 100% of proceeds fund a $15,000 college degree! Spin Plinko multipliers for maximum bid power.",
   keywords: ["cover my college", "college tuition", "advertising", "bidding", "leaderboard", "plinko", "app marketing"],
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
