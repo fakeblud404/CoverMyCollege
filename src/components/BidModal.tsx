@@ -5,6 +5,7 @@ import { CATEGORIES, type AdFormData, type Category } from '@/lib/types';
 import PlinkoGame from './PlinkoGame';
 import PayPalCheckout from './PayPalCheckout';
 import StepUpModal from './StepUpModal';
+import WhopPaymentEmbed from './WhopPaymentEmbed';
 
 interface BidModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
   const [finalMultiplier, setFinalMultiplier] = useState<number | null>(null);
   const [steppedUp, setSteppedUp] = useState<boolean | null>(null);
   const [stepEvaluated, setStepEvaluated] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'whop' | 'paypal'>('whop');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -52,6 +54,13 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
       return;
     }
     setError('');
+
+    // If Whop is selected, proceed directly to payment step to render Whop Elements
+    if (paymentMethod === 'whop') {
+      setStep('payment');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -431,6 +440,56 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
               </p>
             </div>
 
+            {/* Payment Method Selector */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+                Select Payment Method
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('whop')}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: paymentMethod === 'whop' ? '2px solid #0071e3' : '1px solid var(--border)',
+                    background: paymentMethod === 'whop' ? 'rgba(0, 113, 227, 0.07)' : '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    color: paymentMethod === 'whop' ? '#0071e3' : 'var(--ink)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span>⚡ Whop Pay</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('paypal')}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    border: paymentMethod === 'paypal' ? '2px solid #0071e3' : '1px solid var(--border)',
+                    background: paymentMethod === 'paypal' ? 'rgba(0, 113, 227, 0.07)' : '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    color: paymentMethod === 'paypal' ? '#0071e3' : 'var(--ink)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span>💳 PayPal</span>
+                </button>
+              </div>
+            </div>
+
             <button
               className="btn-primary"
               onClick={handleDetailsSubmit}
@@ -449,13 +508,26 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
         )}
 
         {/* Step 2: Payment */}
-        {step === 'payment' && paypalOrderId && (
+        {step === 'payment' && (
           <div className="animate-fade-in">
-            <PayPalCheckout
-              amount={bidAmountCents}
-              onSuccess={handlePaymentSuccess}
-              onError={(msg) => setError(msg)}
-            />
+            {paymentMethod === 'whop' ? (
+              <WhopPaymentEmbed
+                initialAmountUSD={formData.baseBid}
+                adData={formData}
+                onPaymentSuccess={(result) => {
+                  handlePaymentSuccess(result.paymentId);
+                }}
+                onError={(msg) => setError(msg)}
+              />
+            ) : (
+              paypalOrderId && (
+                <PayPalCheckout
+                  amount={bidAmountCents}
+                  onSuccess={handlePaymentSuccess}
+                  onError={(msg) => setError(msg)}
+                />
+              )
+            )}
           </div>
         )}
 
