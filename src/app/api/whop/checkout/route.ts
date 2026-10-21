@@ -40,8 +40,32 @@ export async function POST(request: NextRequest) {
     const accountId = process.env.NEXT_PUBLIC_WHOP_ACCOUNT_ID || process.env.WHOP_ACCOUNT_ID;
     const planId = process.env.WHOP_ONE_TIME_PLAN_ID;
 
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');
-    const redirectUrl = `${appUrl}/payment-completion?user_id=${encodeURIComponent(user.id)}&ad_id=${encodeURIComponent(adId || '')}`;
+    // Whop strictly rejects "localhost" domains for redirect_url, even if prefixed with https://
+    // It requires a valid, publicly resolvable HTTPS URL.
+    let baseHost = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || '';
+    
+    // Check if running on localhost or not set
+    const isLocalhost = !baseHost || baseHost.includes('localhost') || baseHost.includes('127.0.0.1');
+
+    let redirectUrl: string;
+    if (isLocalhost) {
+      // In local development, use a valid https domain as fallback or ngrok/public tunnel if defined
+      // Local dev payment verification works via redirect or client polling
+      const publicBase = process.env.NEXT_PUBLIC_FALLBACK_URL || 'https://covermycollege.com';
+      redirectUrl = `${publicBase.replace(/\/+$/, '')}/payment-completion?user_id=${encodeURIComponent(user.id)}&ad_id=${encodeURIComponent(adId || '')}`;
+    } else {
+      let cleaned = baseHost.replace(/\/+$/, '');
+      if (cleaned.startsWith('http://')) {
+        cleaned = cleaned.replace('http://', 'https://');
+      } else if (!cleaned.startsWith('https://')) {
+        cleaned = `https://${cleaned}`;
+      }
+      redirectUrl = `${cleaned}/payment-completion?user_id=${encodeURIComponent(user.id)}&ad_id=${encodeURIComponent(adId || '')}`;
+    }
+
+    console.log('[Whop Checkout API] Using redirectUrl for Whop:', redirectUrl);
+
+
 
     // Metadata to associate payment with listing/app
     const metadata: Record<string, string> = {
