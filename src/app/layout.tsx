@@ -21,8 +21,14 @@ export const metadata: Metadata = {
     "Apps spend money to rank #1 on our live ad leaderboard while 100% of proceeds fund a $15,000 college degree! Spin Plinko multipliers for maximum bid power.",
   keywords: ["cover my college", "college tuition", "advertising", "bidding", "leaderboard", "plinko", "app marketing"],
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
