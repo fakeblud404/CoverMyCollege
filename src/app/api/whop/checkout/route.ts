@@ -4,6 +4,15 @@ import { getAuthenticatedUser, attachUserCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Early check: fail fast with a helpful message if Whop is not configured
+    const whopApiKey = process.env.WHOP_COMPANY_API_KEY;
+    if (!whopApiKey || whopApiKey === 'your_whop_company_api_key_here' || whopApiKey === 'mock_whop_key') {
+      return NextResponse.json(
+        { error: 'Whop is not configured. Please set WHOP_COMPANY_API_KEY in your Vercel environment variables (or .env.local for local dev).' },
+        { status: 503 }
+      );
+    }
+
     const { user, isNewSession } = getAuthenticatedUser(request);
     const body = await request.json().catch(() => ({}));
     const {
@@ -84,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     if (!checkoutConfig || !checkoutConfig.purchase_url) {
       return NextResponse.json(
-        { error: 'Failed to generate Whop hosted checkout URL.' },
+        { error: 'Failed to generate Whop hosted checkout URL. Please verify your Whop configuration.' },
         { status: 502 }
       );
     }
@@ -101,9 +110,20 @@ export async function POST(request: NextRequest) {
     }
 
     return response;
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error creating Whop hosted checkout session:', error);
-    const message = error instanceof Error ? error.message : 'Internal Server Error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    
+    // Provide explicit and actionable error message
+    let errorMessage = 'Failed to create Whop checkout session.';
+    if (error?.message) {
+      errorMessage = error.message;
+    }
+    if (error?.statusCode === 401 || error?.status === 401 || error?.message?.includes('Unauthorized')) {
+      errorMessage = 'Whop authentication failed: Please check that WHOP_COMPANY_API_KEY is set in your environment variables.';
+    } else if (error?.body?.error?.message) {
+      errorMessage = error.body.error.message;
+    }
+
+    return NextResponse.json({ error: errorMessage }, { status: error?.statusCode || 500 });
   }
 }

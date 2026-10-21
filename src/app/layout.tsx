@@ -22,12 +22,12 @@ export const metadata: Metadata = {
   keywords: ["cover my college", "college tuition", "advertising", "bidding", "leaderboard", "plinko", "app marketing"],
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '512x512' },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: '/favicon.ico',
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
 };

@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { CATEGORIES, type AdFormData, type Category } from '@/lib/types';
 import PlinkoGame from './PlinkoGame';
-import PayPalCheckout from './PayPalCheckout';
 import StepUpModal from './StepUpModal';
-import WhopPaymentEmbed from './WhopPaymentEmbed';
 
 interface BidModalProps {
   isOpen: boolean;
@@ -26,13 +24,12 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
     bidderName: '',
     bidderEmail: '',
   });
-  const [paypalOrderId, setPaypalOrderId] = useState('');
+
   const [paymentIntentId, setPaymentIntentId] = useState('');
   const [targetSlotIndices, setTargetSlotIndices] = useState<number[]>([]);
   const [finalMultiplier, setFinalMultiplier] = useState<number | null>(null);
   const [steppedUp, setSteppedUp] = useState<boolean | null>(null);
   const [stepEvaluated, setStepEvaluated] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'whop' | 'paypal'>('whop');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -54,68 +51,32 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
       return;
     }
     setError('');
-
-    // If Whop is selected, initiate Whop hosted checkout session and redirect user
-    if (paymentMethod === 'whop') {
-      setLoading(true);
-      try {
-        const res = await fetch('/api/whop/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: bidAmountCents,
-            adData: formData,
-          }),
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || 'Failed to initialize Whop hosted checkout');
-        }
-
-        const data = await res.json();
-        if (data.checkoutUrl) {
-          // Direct user to Whop's hosted checkout page
-          window.location.href = data.checkoutUrl;
-          return;
-        } else {
-          throw new Error('No checkout URL received from Whop.');
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Failed to redirect to Whop checkout.';
-        setError(msg);
-        setLoading(false);
-        return;
-      }
-    }
-
     setLoading(true);
 
     try {
-      const res = await fetch('/api/paypal/create-order', {
+      const res = await fetch('/api/whop/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: bidAmountCents, bidderName: formData.bidderName }),
+        body: JSON.stringify({
+          amount: bidAmountCents,
+          adData: formData,
+        }),
       });
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to create PayPal order');
-      }
-      const data = await res.json();
-
-      if (data.isAdminBypass) {
-        // Bypass payment step directly for admin
-        handlePaymentSuccess(data.orderId);
-        return;
+        throw new Error(data.error || 'Failed to initialize Whop hosted checkout');
       }
 
-      setPaypalOrderId(data.orderId);
-      setStep('payment');
+      if (data.checkoutUrl) {
+        // Redirect directly to Whop's hosted checkout page
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error('No checkout URL received from Whop.');
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to initialize payment. Please try again.';
+      const msg = err instanceof Error ? err.message : 'Failed to redirect to Whop checkout.';
       setError(msg);
-    } finally {
       setLoading(false);
     }
   };
@@ -160,7 +121,7 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
           baseBid: bidAmountCents,
           multiplier: mult,
           finalBid: Math.round(bidAmountCents * (isSuccess ? 1.5 : 1.0)),
-          paypalOrderId: paymentIntentId || 'demo-order-' + Date.now(),
+          whopCheckoutId: paymentIntentId || 'whop-' + Date.now(),
         }),
       });
       if (!res.ok) throw new Error('Failed to submit ad');
@@ -200,7 +161,6 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
     // Reset state
     setStep('details');
     setFormData({ title: '', description: '', url: '', category: 'AI', baseBid: 10, bidderName: '', bidderEmail: '' });
-    setPaypalOrderId('');
     setPaymentIntentId('');
     setTargetSlotIndices([]);
     setFinalMultiplier(null);
@@ -458,64 +418,42 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                   min="1"
                   step="1"
                   placeholder="10"
-                  value={formData.baseBid}
-                  onChange={(e) => setFormData({ ...formData, baseBid: Number(e.target.value) })}
+                  value={formData.baseBid || ''}
+                  onChange={(e) => setFormData({ ...formData, baseBid: Math.max(0, Number(e.target.value)) })}
                   style={{ paddingLeft: 30 }}
                 />
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 6 }}>
-                 This amount passes through the Plinko multiplier (0.5× to 10×)
-              </p>
-            </div>
 
-            {/* Payment Method Selector */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
-                Select Payment Method
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('whop')}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: paymentMethod === 'whop' ? '2px solid #0071e3' : '1px solid var(--border)',
-                    background: paymentMethod === 'whop' ? 'rgba(0, 113, 227, 0.07)' : '#ffffff',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    color: paymentMethod === 'whop' ? '#0071e3' : 'var(--ink)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <span>⚡ Whop Pay</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('paypal')}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: paymentMethod === 'paypal' ? '2px solid #0071e3' : '1px solid var(--border)',
-                    background: paymentMethod === 'paypal' ? 'rgba(0, 113, 227, 0.07)' : '#ffffff',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    color: paymentMethod === 'paypal' ? '#0071e3' : 'var(--ink)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <span>💳 PayPal</span>
-                </button>
+              {/* Quick-Select Amounts */}
+              <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                {[1, 5, 10, 25, 50].map((amt) => {
+                  const isSelected = formData.baseBid === amt;
+                  return (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, baseBid: amt })}
+                      style={{
+                        padding: '5px 12px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        borderRadius: '100px',
+                        border: isSelected ? '1.5px solid var(--blue, #0071e3)' : '1px solid rgba(0, 0, 0, 0.12)',
+                        background: isSelected ? 'rgba(0, 113, 227, 0.08)' : '#ffffff',
+                        color: isSelected ? 'var(--blue, #0071e3)' : 'var(--text-secondary, #333336)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      ${amt}
+                    </button>
+                  );
+                })}
               </div>
+
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>
+                 Minimum $1.00. This amount passes through the Plinko multiplier (0.5× to 10×).
+              </p>
             </div>
 
             <button
@@ -526,40 +464,35 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                 width: '100%',
                 padding: '14px',
                 fontSize: '1rem',
-                marginTop: 8,
+                marginTop: 12,
                 opacity: loading ? 0.7 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
               }}
             >
               {loading
-                ? 'Redirecting to Whop...'
-                : paymentMethod === 'whop'
-                ? `Continue to Whop Checkout — $${formData.baseBid.toFixed(2)}`
-                : `Continue to Payment — $${formData.baseBid.toFixed(2)}`}
+                ? 'Connecting to Whop...'
+                : `⚡ Continue to Whop Checkout — $${formData.baseBid.toFixed(2)}`}
             </button>
+            <p style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+              🔒 You will be securely redirected to Whop to complete your payment.
+            </p>
           </div>
         )}
 
-        {/* Step 2: Payment */}
+        {/* Step 2: Payment Fallback */}
         {step === 'payment' && (
-          <div className="animate-fade-in">
-            {paymentMethod === 'whop' ? (
-              <WhopPaymentEmbed
-                initialAmountUSD={formData.baseBid}
-                adData={formData}
-                onPaymentSuccess={(result) => {
-                  handlePaymentSuccess(result.paymentId);
-                }}
-                onError={(msg) => setError(msg)}
-              />
-            ) : (
-              paypalOrderId && (
-                <PayPalCheckout
-                  amount={bidAmountCents}
-                  onSuccess={handlePaymentSuccess}
-                  onError={(msg) => setError(msg)}
-                />
-              )
-            )}
+          <div className="animate-fade-in" style={{ textAlign: 'center', padding: '24px 0' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: 16 }}>
+              Redirecting you to Whop hosted checkout...
+            </p>
+            <button
+              className="btn-primary"
+              onClick={handleDetailsSubmit}
+              disabled={loading}
+              style={{ padding: '12px 28px', fontSize: '0.95rem' }}
+            >
+              {loading ? 'Connecting...' : 'Click to Proceed to Whop'}
+            </button>
           </div>
         )}
 
