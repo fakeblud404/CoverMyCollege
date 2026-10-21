@@ -38,22 +38,45 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
   const bidAmountCents = Math.round(formData.baseBid * 100);
 
   const handleDetailsSubmit = async () => {
-    if (!formData.title || !formData.url || formData.baseBid < 1) {
-      setError('Please fill in all required fields and bid at least $1.');
+    console.log('[Whop Checkout Client] Payment button clicked:', {
+      baseBid: formData.baseBid,
+      hasTitle: Boolean(formData.title.trim()),
+      hasUrl: Boolean(formData.url.trim()),
+      hasBidderName: Boolean(formData.bidderName.trim()),
+      hasBidderEmail: Boolean(formData.bidderEmail.trim()),
+      loading,
+    });
+
+    if (loading) {
+      console.warn('[Whop Checkout Client] Prevented repeated click while loading.');
+      return;
+    }
+
+    if (!formData.title?.trim() || !formData.url?.trim() || formData.baseBid < 1) {
+      const msg = 'Please enter an Ad Title, Website URL, and a minimum bid of $1.00.';
+      console.warn('[Whop Checkout Client] Validation failed:', msg);
+      setError(msg);
       return;
     }
     if (!formData.bidderName.trim()) {
-      setError('Please enter your name so it can appear on the leaderboard.');
+      const msg = 'Please enter your name so it can appear on the leaderboard.';
+      console.warn('[Whop Checkout Client] Validation failed:', msg);
+      setError(msg);
       return;
     }
     if (!formData.bidderEmail.trim() || !formData.bidderEmail.includes('@')) {
-      setError('Please enter a valid email address for your receipt.');
+      const msg = 'Please enter a valid email address for your payment receipt.';
+      console.warn('[Whop Checkout Client] Validation failed:', msg);
+      setError(msg);
       return;
     }
+
     setError('');
     setLoading(true);
 
     try {
+      console.log('[Whop Checkout Client] Sending request to /api/whop/checkout with amountCents:', bidAmountCents);
+
       const res = await fetch('/api/whop/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,19 +86,43 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
         }),
       });
 
+      console.log('[Whop Checkout Client] Checkout API responded with status:', res.status);
       const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to initialize Whop hosted checkout');
+        throw new Error(data.error || `Failed to create checkout (HTTP ${res.status}).`);
       }
 
-      if (data.checkoutUrl) {
-        // Redirect directly to Whop's hosted checkout page
-        window.location.href = data.checkoutUrl;
-      } else {
-        throw new Error('No checkout URL received from Whop.');
+      const checkoutUrl = data.checkoutUrl;
+      console.log('[Whop Checkout Client] Received checkout response:', {
+        checkoutId: data.checkoutId,
+        hasUrl: Boolean(checkoutUrl),
+      });
+
+      if (!checkoutUrl || typeof checkoutUrl !== 'string') {
+        throw new Error('No checkout URL received from Whop server.');
       }
+
+      // Validate URL format and security protocol
+      let destination = checkoutUrl.trim();
+      if (!destination.startsWith('https://') && !destination.startsWith('http://')) {
+        destination = `https://${destination}`;
+      }
+
+      try {
+        const parsedUrl = new URL(destination);
+        if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+          throw new Error('Invalid URL protocol returned from checkout.');
+        }
+      } catch (urlErr: any) {
+        throw new Error(`Invalid checkout destination URL: ${urlErr?.message || destination}`);
+      }
+
+      console.log('[Whop Checkout Client] Navigating window tab to Whop hosted checkout:', destination);
+      window.location.assign(destination);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to redirect to Whop checkout.';
+      console.error('[Whop Checkout Client] Checkout failed:', msg);
       setError(msg);
       setLoading(false);
     }
@@ -456,6 +503,28 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
               </p>
             </div>
 
+            {/* In-form visible error banner directly above checkout button */}
+            {error && (
+              <div
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 'var(--radius-md, 12px)',
+                  background: 'rgba(255, 59, 48, 0.1)',
+                  border: '1px solid rgba(255, 59, 48, 0.3)',
+                  color: '#d32f2f',
+                  fontSize: '0.86rem',
+                  lineHeight: 1.45,
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                }}
+              >
+                <span style={{ fontSize: '1rem', lineHeight: 1 }}>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+
             <button
               className="btn-primary"
               onClick={handleDetailsSubmit}
@@ -464,7 +533,7 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                 width: '100%',
                 padding: '14px',
                 fontSize: '1rem',
-                marginTop: 12,
+                marginTop: error ? 4 : 12,
                 opacity: loading ? 0.7 : 1,
                 cursor: loading ? 'not-allowed' : 'pointer',
               }}

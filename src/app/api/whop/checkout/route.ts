@@ -60,25 +60,45 @@ export async function POST(request: NextRequest) {
 
     let checkoutConfig: any;
 
-    // First attempt: create dynamic variable-amount hosted checkout via inline plan
+    // 2. Try creating checkout configuration
+    // Method A: Inline one-time plan with product_id (if WHOP_PRODUCT_ID is defined) or inline plan
+    console.log('[Whop Checkout API] Initializing checkout configuration for amount:', {
+      amountUSD: amountInDollars,
+      amountCents: amountInCents,
+      hasAdTitle: Boolean(adData?.title),
+      hasAdUrl: Boolean(adData?.url),
+      hasPlanId: Boolean(planId),
+    });
+
+    const productId = process.env.WHOP_PRODUCT_ID;
+
     try {
+      const planPayload: Record<string, any> = {
+        currency: 'usd',
+        initial_price: amountInDollars,
+        plan_type: 'one_time',
+        title: adData?.title ? `App Promotion: ${adData.title}` : `App Promotion ($${amountInDollars.toFixed(2)})`,
+      };
+
+      if (productId) {
+        planPayload.product_id = productId;
+      }
+
+      console.log('[Whop Checkout API] Attempting checkout creation with inline plan...');
       checkoutConfig = await whop.checkoutConfigurations.create({
         mode: 'payment',
         redirect_url: redirectUrl,
         account_id: accountId || undefined,
         metadata,
-        plan: {
-          currency: 'usd',
-          initial_price: amountInDollars,
-          plan_type: 'one_time',
-          title: adData?.title ? `App Promotion: ${adData.title}` : `App Promotion ($${amountInDollars.toFixed(2)})`,
-        },
+        plan: planPayload as any,
       });
+      console.log('[Whop Checkout API] Checkout configuration created via inline plan.');
     } catch (inlineErr: any) {
-      console.warn('Inline plan checkout creation not permitted or failed, falling back to configured plan:', inlineErr?.message);
-      
-      // Fallback: if account requires pre-created plan_id
+      console.warn('[Whop Checkout API] Inline plan creation error:', inlineErr?.message || inlineErr);
+
+      // If missing product_id or inline plan fails and we have a product list or planId, try fallbacks
       if (planId) {
+        console.log('[Whop Checkout API] Retrying with pre-configured plan_id:', planId);
         checkoutConfig = await whop.checkoutConfigurations.create({
           mode: 'payment',
           plan_id: planId,
@@ -86,21 +106,72 @@ export async function POST(request: NextRequest) {
           account_id: accountId || undefined,
           metadata,
         });
+        console.log('[Whop Checkout API] Checkout configuration created via plan_id.');
       } else {
-        throw inlineErr;
+        // Try fetching first available product to attach product_id to inline plan
+        try {
+          console.log('[Whop Checkout API] Attempting to auto-discover product for inline plan...');
+          const productsRes = await whop.products.list({ account_id: accountId || undefined });
+          const productsList = (productsRes as any)?.data || productsRes;
+          const firstProduct = Array.isArray(productsList) ? productsList[0] : null;
+
+          if (firstProduct?.id) {
+            console.log('[Whop Checkout API] Found product ID:', firstProduct.id, 'retrying inline plan...');
+            checkoutConfig = await whop.checkoutConfigurations.create({
+              mode: 'payment',
+              redirect_url: redirectUrl,
+              account_id: accountId || undefined,
+              metadata,
+              plan: {
+                product_id: firstProduct.id,
+                currency: 'usd',
+                initial_price: amountInDollars,
+                plan_type: 'one_time',
+                title: adData?.title ? `App Promotion: ${adData.title}` : `App Promotion ($${amountInDollars.toFixed(2)})`,
+              },
+            });
+            console.log('[Whop Checkout API] Checkout created with auto-discovered product.');
+          } else {
+            throw inlineErr;
+          }
+        } catch {
+          // Re-throw the original error if fallback also failed
+          throw inlineErr;
+        }
       }
     }
 
-    if (!checkoutConfig || !checkoutConfig.purchase_url) {
+    // Resolve purchase_url (can be relative e.g. "/checkout/ch_xxx" or absolute "https://whop.com/checkout/ch_xxx")
+    let rawUrl: string | undefined = checkoutConfig?.purchase_url;
+    if (!rawUrl && checkoutConfig?.data?.purchase_url) {
+      rawUrl = checkoutConfig.data.purchase_url;
+    }
+
+    if (!rawUrl) {
+      console.error('[Whop Checkout API] No purchase_url in Whop response:', checkoutConfig);
       return NextResponse.json(
-        { error: 'Failed to generate Whop hosted checkout URL. Please verify your Whop configuration.' },
+        { error: 'Failed to generate Whop checkout URL. Please verify your Whop settings and plan configuration.' },
         { status: 502 }
       );
     }
 
+    // Ensure valid absolute HTTPS URL
+    let checkoutUrl = rawUrl.trim();
+    if (checkoutUrl.startsWith('/')) {
+      checkoutUrl = `https://whop.com${checkoutUrl}`;
+    } else if (!checkoutUrl.startsWith('http://') && !checkoutUrl.startsWith('https://')) {
+      checkoutUrl = `https://${checkoutUrl}`;
+    }
+
+    console.log('[Whop Checkout API] Successfully resolved checkout URL:', {
+      checkoutId: checkoutConfig?.id || checkoutConfig?.data?.id,
+      isHttps: checkoutUrl.startsWith('https://'),
+      domain: new URL(checkoutUrl).hostname,
+    });
+
     const response = NextResponse.json({
-      checkoutUrl: checkoutConfig.purchase_url,
-      checkoutId: checkoutConfig.id,
+      checkoutUrl,
+      checkoutId: checkoutConfig?.id || checkoutConfig?.data?.id,
       amountCents: amountInCents,
       amountUSD: amountInDollars,
     });
@@ -111,19 +182,27 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error: any) {
-    console.error('Error creating Whop hosted checkout session:', error);
-    
-    // Provide explicit and actionable error message
+    console.error('[Whop Checkout API] Error creating Whop hosted checkout session:', error);
+
+    // Extract exact details from Whop error object or HTTP response
     let errorMessage = 'Failed to create Whop checkout session.';
-    if (error?.message) {
+    if (error?.body?.error?.message) {
+      errorMessage = error.body.error.message;
+    } else if (error?.body?.message) {
+      errorMessage = error.body.message;
+    } else if (error?.message) {
       errorMessage = error.message;
     }
-    if (error?.statusCode === 401 || error?.status === 401 || error?.message?.includes('Unauthorized')) {
-      errorMessage = 'Whop authentication failed: Please check that WHOP_COMPANY_API_KEY is set in your environment variables.';
-    } else if (error?.body?.error?.message) {
-      errorMessage = error.body.error.message;
+
+    if (error?.statusCode === 401 || error?.status === 401 || errorMessage.includes('Unauthorized') || errorMessage.includes('unauthorized')) {
+      errorMessage = 'Whop authentication failed (401). Please verify WHOP_COMPANY_API_KEY in your Vercel Environment Variables.';
+    } else if (error?.statusCode === 403 || error?.status === 403) {
+      errorMessage = 'Whop permission denied (403). Make sure your API key has checkout and plan creation permissions.';
     }
 
-    return NextResponse.json({ error: errorMessage }, { status: error?.statusCode || 500 });
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: error?.statusCode || error?.status || 500 }
+    );
   }
 }
