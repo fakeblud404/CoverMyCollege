@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { CATEGORIES, type AdFormData, type Category } from '@/lib/types';
 import PlinkoGame from './PlinkoGame';
 import StepUpModal from './StepUpModal';
@@ -32,6 +32,8 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
   const [stepEvaluated, setStepEvaluated] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -377,11 +379,14 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
 
                 <div style={{ flex: 1 }}>
                   <input
+                    ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    style={{ display: 'none' }}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        setSelectedFileName(file.name);
                         const reader = new FileReader();
                         reader.onload = (event) => {
                           const result = event.target?.result as string;
@@ -390,9 +395,47 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                         reader.readAsDataURL(file);
                       }
                     }}
-                    style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}
                   />
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        padding: '6px 14px',
+                        fontSize: '0.8rem',
+                        fontWeight: 500,
+                        color: 'var(--ink, #1d1d1f)',
+                        background: '#f2f2f7',
+                        border: '1px solid rgba(0, 0, 0, 0.12)',
+                        borderRadius: 'var(--radius-sm, 6px)',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease, border-color 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#e5e5ea';
+                        e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.2)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#f2f2f7';
+                        e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.12)';
+                      }}
+                    >
+                      Choose File
+                    </button>
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        color: selectedFileName ? 'var(--text-secondary, #6e6e73)' : 'var(--text-muted, #86868b)',
+                        maxWidth: 200,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {selectedFileName || 'No file chosen'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
                     Square image recommended (cropped automatically to fit leaderboard icon).
                   </div>
                 </div>
@@ -525,25 +568,37 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
               </div>
             )}
 
-            <button
-              className="btn-primary"
-              onClick={handleDetailsSubmit}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '14px',
-                fontSize: '1rem',
-                marginTop: error ? 4 : 12,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {loading
-                ? 'Connecting to Whop...'
-                : `⚡ Continue to Whop Checkout — $${formData.baseBid.toFixed(2)}`}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: error ? 4 : 12 }}>
+              <button
+                className="btn-primary"
+                onClick={handleDetailsSubmit}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loading
+                  ? 'Connecting to Checkout...'
+                  : `Continue to Checkout — $${formData.baseBid.toFixed(2)}`}
+              </button>
+              <div
+                style={{
+                  textAlign: 'center',
+                  fontSize: '0.75rem',
+                  color: 'var(--ink-3, #86868b)',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                via Whop
+              </div>
+            </div>
             <p style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-              🔒 You will be securely redirected to Whop to complete your payment.
+              You will be securely redirected to Whop to complete your payment.
             </p>
           </div>
         )}
