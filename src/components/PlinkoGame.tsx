@@ -7,8 +7,8 @@ interface PlinkoGameProps {
   onComplete: (multiplier: number) => void;
 }
 
-const SLOT_MULTIPLIERS = [75, 50, 35, 20, 10, 20, 35, 50, 75];
-const SLOT_BOOST_LABELS = ['+75% Odds', '+50% Odds', '+35% Odds', '+20% Odds', '+10% Odds', '+20% Odds', '+35% Odds', '+50% Odds', '+75% Odds'];
+const SLOT_MULTIPLIERS = [2.5, 1.5, 1.0, 0.5, 0.25, 0.5, 1.0, 1.5, 2.5];
+const SLOT_BOOST_LABELS = ['x 2.5', 'x 1.5', 'x 1.0', 'x 0.5', 'x 0.25', 'x 0.5', 'x 1.0', 'x 1.5', 'x 2.5'];
 const ROWS = 8;
 const COLS = 9;
 const BALL_RADIUS = 6; // slightly smaller for multi-ball density
@@ -16,12 +16,11 @@ const PEG_RADIUS = 4;
 const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 480;
 
-function getSlotColor(multiplier: number): string {
-  if (multiplier >= 75) return '#0071e3';
-  if (multiplier >= 50) return '#2563eb';
-  if (multiplier >= 35) return '#3b82f6';
-  if (multiplier >= 20) return '#60a5fa';
-  return '#93c5fd';
+// Bright pink color for slot odds/multipliers
+const BRIGHT_PINK = '#ff2d87';
+
+function getSlotColor(_multiplier: number): string {
+  return BRIGHT_PINK;
 }
 
 interface Peg {
@@ -319,7 +318,7 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
             Balls Landed: <strong style={{ color: '#fff' }}>{landedCount} / {targetSlotIndices.length}</strong>
           </span>
           <span style={{ color: 'var(--text-secondary)' }}>
-            Average Step-Up Chance: <strong style={{ color: 'var(--blue)' }}>+{runningAverage}% Odds</strong>
+            Average Step-Up Multiplier: <strong style={{ color: '#ff2d87' }}>x {runningAverage.toFixed(2)}</strong>
           </span>
         </div>
       )}
@@ -358,8 +357,8 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
             textAlign: 'center',
             padding: '16px 24px',
             borderRadius: 'var(--radius-lg)',
-            background: 'rgba(0, 113, 227, 0.08)',
-            border: '1px solid rgba(0, 113, 227, 0.25)',
+            background: 'rgba(255, 45, 135, 0.08)',
+            border: '1px solid rgba(255, 45, 135, 0.25)',
             width: '100%',
           }}
         >
@@ -370,10 +369,10 @@ export default function PlinkoGame({ targetSlotIndices, onComplete }: PlinkoGame
             style={{
               fontSize: '2rem',
               fontWeight: 800,
-              color: 'var(--blue)',
+              color: '#ff2d87',
             }}
           >
-            +{runningAverage}% Step-Up Odds Earned!
+            x {runningAverage.toFixed(2)} Step-Up Multiplier Earned!
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4 }}>
             Calculated across {targetSlotIndices.length} balls

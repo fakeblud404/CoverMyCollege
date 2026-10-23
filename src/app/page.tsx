@@ -45,6 +45,8 @@ export default function HomePage() {
   }, [fetchAds]);
 
   const filteredAds = category === 'All' ? ads : ads.filter((a) => a.category === category);
+  const totalRaised = ads.reduce((sum, ad) => sum + (ad.baseBid ?? 0), 0) / 100;
+  const totalApps = ads.length;
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.4s ease' }}>
@@ -55,7 +57,12 @@ export default function HomePage() {
 
       <main style={{ flex: 1, maxWidth: 1080, margin: '0 auto', width: '100%', padding: '0 24px' }}>
         {/* Hero */}
-        <LeaderboardHero activeAdsCount={filteredAds.length} onStartBidding={() => setBidModalOpen(true)} />
+        <LeaderboardHero
+          activeAdsCount={filteredAds.length}
+          totalRaised={totalRaised}
+          totalApps={totalApps}
+          onStartBidding={() => setBidModalOpen(true)}
+        />
 
         {/* Purpose banner */}
         <PurposeBanner />

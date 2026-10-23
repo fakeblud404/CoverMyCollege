@@ -1,13 +1,18 @@
-'use client';
-
 import Link from 'next/link';
 
 interface LeaderboardHeroProps {
   activeAdsCount: number;
   onStartBidding?: () => void;
+  totalRaised?: number;
+  totalApps?: number;
 }
 
-export default function LeaderboardHero({ activeAdsCount, onStartBidding }: LeaderboardHeroProps) {
+export default function LeaderboardHero({
+  activeAdsCount,
+  onStartBidding,
+  totalRaised,
+  totalApps,
+}: LeaderboardHeroProps) {
   return (
     <section
       style={{
@@ -137,9 +142,15 @@ export default function LeaderboardHero({ activeAdsCount, onStartBidding }: Lead
           }}
         >
           {[
-            { value: '$6,450+', label: 'Raised For College' },
+            {
+              value: `$${(totalRaised ?? 22).toLocaleString('en-US', { minimumFractionDigits: 0 })}`,
+              label: 'Raised For College',
+            },
             { value: '$15,000', label: 'Tuition Goal' },
-            { value: '15+', label: 'Sponsoring Apps' },
+            {
+              value: `${totalApps ?? 3}`,
+              label: 'Sponsoring Apps',
+            },
             { value: '100%', label: 'Goes To Tuition' },
           ].map(stat => (
             <div key={stat.label} style={{ textAlign: 'center' }}>

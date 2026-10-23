@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from 'react';
 
+import { INITIAL_LEADERBOARD_ADS } from '@/lib/initial-ads';
+
 interface TuitionProgressTrackerProps {
   targetAmount?: number;
   onBidClick?: () => void;
 }
 
+const DEFAULT_INITIAL_TOTAL = INITIAL_LEADERBOARD_ADS.reduce((sum, a) => sum + (a.baseBid ?? 0), 0) / 100;
+
 export default function TuitionProgressTracker({
   targetAmount = 15000,
   onBidClick,
 }: TuitionProgressTrackerProps) {
-  const [currentAmount, setCurrentAmount] = useState(0);
-  const [animatedAmount, setAnimatedAmount] = useState(0);
-  const [statsLoaded, setStatsLoaded] = useState(false);
+  const [currentAmount, setCurrentAmount] = useState(DEFAULT_INITIAL_TOTAL);
+  const [animatedAmount, setAnimatedAmount] = useState(DEFAULT_INITIAL_TOTAL);
+  const [statsLoaded, setStatsLoaded] = useState(true);
 
   useEffect(() => {
     let cancelled = false;

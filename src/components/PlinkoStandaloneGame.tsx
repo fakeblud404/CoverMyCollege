@@ -348,16 +348,16 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
               {risk.charAt(0).toUpperCase() + risk.slice(1)} Risk — Leaderboard Position Boost Layout
             </div>
             <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {riskConfig.slotMultipliers.map((m, i) => {
-                const color = '#2563eb';
+              {['x 2.5', 'x 1.5', 'x 1.0', 'x 0.5', 'x 0.25', 'x 0.5', 'x 1.0', 'x 1.5', 'x 2.5'].map((label, i) => {
+                const color = '#ff2d87';
                 return (
                   <div
                     key={i}
                     style={{
                       padding: '6px 10px',
                       borderRadius: 'var(--radius-sm)',
-                      background: `${color}14`,
-                      border: `1px solid ${color}33`,
+                      background: 'rgba(255, 45, 135, 0.12)',
+                      border: '1px solid rgba(255, 45, 135, 0.35)',
                       color,
                       fontWeight: 700,
                       fontSize: '0.78rem',
@@ -365,7 +365,7 @@ export default function PlinkoStandaloneGame({ realityCheckInterval = 30 }: Plin
                       minWidth: 44,
                     }}
                   >
-                    +{m} Ranks
+                    {label}
                   </div>
                 );
               })}

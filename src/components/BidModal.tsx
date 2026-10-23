@@ -640,15 +640,15 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                   Step Up in Leaderboard?
                 </h2>
                 <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20 }}>
-                  You earned <strong style={{ color: 'var(--blue)' }}>+{finalMultiplier || 35}% Step-Up Odds</strong> from Plinko!
+                  You earned <strong style={{ color: '#ff2d87' }}>x {(finalMultiplier || 1.0).toFixed(2)} Step-Up Multiplier</strong> from Plinko!
                 </p>
 
                 {/* Competitor Bid Comparison Info */}
                 <div
                   style={{
                     padding: '14px',
-                    background: 'rgba(0, 113, 227, 0.06)',
-                    border: '1px solid rgba(0, 113, 227, 0.15)',
+                    background: 'rgba(255, 45, 135, 0.06)',
+                    border: '1px solid rgba(255, 45, 135, 0.18)',
                     borderRadius: 'var(--radius-md)',
                     marginBottom: 24,
                     textAlign: 'left',
@@ -657,17 +657,12 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                     lineHeight: 1.5,
                   }}
                 >
-                  <div style={{ fontWeight: 700, color: 'var(--blue)', marginBottom: 4 }}>
-                    Leaderboard Competitor Check
+                  <div style={{ fontWeight: 700, color: '#ff2d87', marginBottom: 4 }}>
+                    Leaderboard Position Boost Check
                   </div>
-                  {formData.baseBid < 120 ? (
-                    <div>
-                      Competitor above (Apex AI SaaS) has a higher bid ($120 vs ${formData.baseBid}).
-                      Your step-up chance was adjusted from {finalMultiplier || 35}% to {Math.max(5, Math.round((finalMultiplier || 35) * Math.max(0.35, formData.baseBid / 120)))}%.
-                    </div>
-                  ) : (
-                    <div>You hold a competitive bid! Your full {finalMultiplier || 35}% step-up chance is active.</div>
-                  )}
+                  <div>
+                    Your base bid of <strong>${formData.baseBid}</strong> combined with your Plinko multiplier <strong>x {(finalMultiplier || 1.0).toFixed(2)}</strong> gives your app an boosted chance of jumping up a position!
+                  </div>
                 </div>
 
                 <button
@@ -681,7 +676,7 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
                     opacity: loading ? 0.7 : 1,
                   }}
                 >
-                  {loading ? 'Evaluating Odds…' : 'Step Up in Leaderboard'}
+                  {loading ? 'Evaluating Position Jump…' : 'Step Up in Leaderboard'}
                 </button>
               </div>
             ) : (
