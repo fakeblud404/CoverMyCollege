@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import CountdownTimer from './CountdownTimer';
 import type { Ad, AuctionStatus } from '@/lib/types';
 
 interface LeaderboardEntryProps {
@@ -193,12 +192,9 @@ export default function LeaderboardEntry({ ad, rank, onBid }: LeaderboardEntryPr
         >
           {finalBidDisplay}
         </div>
-        <div style={{ fontSize: '0.72rem', color: '#64748b', marginBottom: 4 }}>
+        <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
           {ad.multiplier}× multiplier
         </div>
-        {ad.endsAt && (
-          <CountdownTimer endsAt={new Date(ad.endsAt)} compact />
-        )}
       </div>
 
       {/* Action buttons */}
