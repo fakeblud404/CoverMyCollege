@@ -13,28 +13,28 @@ import AboutMeSection from '@/components/AboutMeSection';
 import HowItWorksSection from '@/components/HowItWorksSection';
 import FAQAccordion from '@/components/FAQAccordion';
 import Footer from '@/components/Footer';
+import { INITIAL_LEADERBOARD_ADS } from '@/lib/initial-ads';
 import type { Ad, Category } from '@/lib/types';
 
 export default function HomePage() {
-  const [ads, setAds] = useState<Ad[]>([]);
+  const [ads, setAds] = useState<Ad[]>(INITIAL_LEADERBOARD_ADS);
   const [category, setCategory] = useState<Category>('All');
   const [bidModalOpen, setBidModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const fetchAds = useCallback(async () => {
     try {
-      setLoading(true);
       const params = new URLSearchParams();
       if (category !== 'All') params.set('category', category);
       const res = await fetch(`/api/ads?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setAds((data.ads as Ad[]) ?? []);
+        if (data.ads && data.ads.length > 0) {
+          setAds(data.ads as Ad[]);
+        }
       }
     } catch {
       // Keep whatever was previously displayed
-    } finally {
-      setLoading(false);
     }
   }, [category]);
 

@@ -7,29 +7,30 @@ import LeaderboardEntry from '@/components/LeaderboardEntry';
 import BidModal from '@/components/BidModal';
 import Footer from '@/components/Footer';
 import BigPlinkoWinners from '@/components/BigPlinkoWinners';
+import { INITIAL_LEADERBOARD_ADS } from '@/lib/initial-ads';
 import type { Ad, Category } from '@/lib/types';
 
 export default function LiveAuctionsClient() {
-  const [ads, setAds] = useState<Ad[]>([]);
+  const [ads, setAds] = useState<Ad[]>(INITIAL_LEADERBOARD_ADS);
   const [category, setCategory] = useState<Category>('All');
   const [bidModalOpen, setBidModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   const fetchAds = useCallback(async () => {
     try {
-      setLoading(true);
       const params = new URLSearchParams();
       if (category !== 'All') params.set('category', category);
       const res = await fetch(`/api/ads?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setAds((data.ads as Ad[]) || []);
+        if (data.ads && data.ads.length > 0) {
+          setAds(data.ads as Ad[]);
+        }
       }
     } catch {
-      setAds([]);
+      // keep current ads
     } finally {
-      setLoading(false);
       setLastUpdated(new Date());
     }
   }, [category]);

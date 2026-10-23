@@ -2,67 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
+import { INITIAL_LEADERBOARD_ADS } from '@/lib/initial-ads';
+
 declare global {
   // eslint-disable-next-line no-var
   var __MEMO_ADS_STORE: any[] | undefined;
 }
 
-const INITIAL_MOCK_ADS = [
-  {
-    id: 'app-mastra',
-    title: 'Mastra',
-    description: 'Build, observe, and improve agents that run for days with Mastra, the leading TypeScript agent framework',
-    url: 'https://mastra.ai',
-    logoUrl: '/apps/mastra.png',
-    category: 'AI',
-    baseBid: 1000,
-    multiplier: 1.0,
-    finalBid: 1000,
-    clicks: 1420,
-    status: 'active',
-    bidderName: 'Mastra Team',
-    bidderCount: 1,
-    createdAt: new Date().toISOString(),
-    endsAt: null,
-  },
-  {
-    id: 'app-creem',
-    title: 'Creem',
-    description: 'Sell software and digital products globally, with payments, taxes, payouts, affiliates, usage billing, conversion attribution and analytics handled for you.',
-    url: 'https://creem.io',
-    logoUrl: '/apps/creem.png',
-    category: 'SaaS',
-    baseBid: 700,
-    multiplier: 1.0,
-    finalBid: 700,
-    clicks: 980,
-    status: 'active',
-    bidderName: 'Creem Team',
-    bidderCount: 1,
-    createdAt: new Date().toISOString(),
-    endsAt: null,
-  },
-  {
-    id: 'app-ami-ai',
-    title: 'Ami AI',
-    description: 'Give Ami your website and 20 minutes. You get a targeted list and a live campaign – with Ami sticking around to fix what stalls and scale what works.',
-    url: 'https://aisdr.com/',
-    logoUrl: '/apps/amiai.jpg',
-    category: 'AI',
-    baseBid: 500,
-    multiplier: 1.0,
-    finalBid: 500,
-    clicks: 650,
-    status: 'active',
-    bidderName: 'Ami AI Team',
-    bidderCount: 1,
-    createdAt: new Date().toISOString(),
-    endsAt: null,
-  },
-];
-
 if (!globalThis.__MEMO_ADS_STORE) {
-  globalThis.__MEMO_ADS_STORE = [...INITIAL_MOCK_ADS];
+  globalThis.__MEMO_ADS_STORE = [...INITIAL_LEADERBOARD_ADS];
 }
 
 // GET /api/ads — Fetch leaderboard sorted by finalBid desc
@@ -89,25 +37,35 @@ export async function GET(request: NextRequest) {
           .limit(limit);
       }
 
-      const snapshot = await query.get();
-      ads = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        // Strip private bidderEmail before returning to client
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { bidderEmail: _omit, ...publicData } = data;
-        return {
-          id: doc.id,
-          ...publicData,
-          createdAt: data.createdAt?.toDate?.() || new Date(),
-          updatedAt: data.updatedAt?.toDate?.() || new Date(),
-          endsAt: data.endsAt?.toDate?.() ?? null,
-        };
-      });
+      // Add a quick timeout (1.5s) to Firestore call so it never blocks page loading if Firebase is slow/disabled
+      const firestorePromise = query.get();
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Firestore timeout')), 1500)
+      );
+
+      const snapshot = (await Promise.race([firestorePromise, timeoutPromise])) as any;
+      if (snapshot && snapshot.docs) {
+        ads = snapshot.docs.map((doc: any) => {
+          const data = doc.data();
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { bidderEmail: _omit, ...publicData } = data;
+          return {
+            id: doc.id,
+            ...publicData,
+            createdAt: data.createdAt?.toDate?.() || new Date(),
+            updatedAt: data.updatedAt?.toDate?.() || new Date(),
+            endsAt: data.endsAt?.toDate?.() ?? null,
+          };
+        });
+      }
+
       if (ads.length === 0) {
         ads = [...(globalThis.__MEMO_ADS_STORE || [])];
+        if (category && category !== 'All') {
+          ads = ads.filter((ad) => ad.category === category);
+        }
       }
-    } catch (dbError) {
-      console.warn('Firestore not initialized or failed, using local in-memory store:', dbError);
+    } catch {
       ads = [...(globalThis.__MEMO_ADS_STORE || [])];
       if (category && category !== 'All') {
         ads = ads.filter((ad) => ad.category === category);

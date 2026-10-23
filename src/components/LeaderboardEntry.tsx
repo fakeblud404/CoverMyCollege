@@ -172,7 +172,6 @@ export default function LeaderboardEntry({ ad, rank, onBid }: LeaderboardEntryPr
           }}
         >
           <span className="badge badge-category" style={{ fontSize: '0.65rem' }}>{ad.category}</span>
-          <span> {ad.clicks.toLocaleString()} clicks</span>
           <span>{formatDistanceToNow(new Date(ad.createdAt), { addSuffix: true })}</span>
           {ad.bidderCount != null && (
             <span> {ad.bidderCount} bidders</span>
