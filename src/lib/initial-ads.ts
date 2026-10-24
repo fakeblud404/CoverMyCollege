@@ -16,8 +16,8 @@ export const INITIAL_LEADERBOARD_ADS: Ad[] = [
     stripePaymentId: 'mock-mastra',
     bidderName: 'Mastra Team',
     bidderCount: 1,
-    createdAt: '2026-10-24T00:00:00.000Z',
-    updatedAt: '2026-10-24T00:00:00.000Z',
+    createdAt: '2026-10-20T11:17:00.000Z',
+    updatedAt: '2026-10-20T11:17:00.000Z',
   },
   {
     id: 'app-creem',
@@ -34,8 +34,8 @@ export const INITIAL_LEADERBOARD_ADS: Ad[] = [
     stripePaymentId: 'mock-creem',
     bidderName: 'Creem Team',
     bidderCount: 1,
-    createdAt: '2026-10-24T00:00:00.000Z',
-    updatedAt: '2026-10-24T00:00:00.000Z',
+    createdAt: '2026-10-22T08:34:00.000Z',
+    updatedAt: '2026-10-22T08:34:00.000Z',
   },
   {
     id: 'app-ami-ai',
@@ -52,7 +52,7 @@ export const INITIAL_LEADERBOARD_ADS: Ad[] = [
     stripePaymentId: 'mock-ami-ai',
     bidderName: 'Ami AI Team',
     bidderCount: 1,
-    createdAt: '2026-10-24T00:00:00.000Z',
-    updatedAt: '2026-10-24T00:00:00.000Z',
+    createdAt: '2026-10-21T16:52:00.000Z',
+    updatedAt: '2026-10-21T16:52:00.000Z',
   },
 ];
