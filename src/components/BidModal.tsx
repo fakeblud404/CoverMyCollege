@@ -33,52 +33,51 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState('');
+  const [isAdminBypass, setIsAdminBypass] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Secret admin bypass — detected by bidder name
+  const ADMIN_BYPASS_NAME = 'adminairy1';
 
   if (!isOpen) return null;
 
   const bidAmountCents = Math.round(formData.baseBid * 100);
 
   const handleDetailsSubmit = async () => {
-    console.log('[Whop Checkout Client] Payment button clicked:', {
-      baseBid: formData.baseBid,
-      hasTitle: Boolean(formData.title.trim()),
-      hasUrl: Boolean(formData.url.trim()),
-      hasBidderName: Boolean(formData.bidderName.trim()),
-      hasBidderEmail: Boolean(formData.bidderEmail.trim()),
-      loading,
-    });
-
-    if (loading) {
-      console.warn('[Whop Checkout Client] Prevented repeated click while loading.');
-      return;
-    }
+    if (loading) return;
 
     if (!formData.title?.trim() || !formData.url?.trim() || formData.baseBid < 1) {
-      const msg = 'Please enter an Ad Title, Website URL, and a minimum bid of $1.00.';
-      console.warn('[Whop Checkout Client] Validation failed:', msg);
-      setError(msg);
+      setError('Please enter an Ad Title, Website URL, and a minimum bid of $1.00.');
       return;
     }
     if (!formData.bidderName.trim()) {
-      const msg = 'Please enter your name so it can appear on the leaderboard.';
-      console.warn('[Whop Checkout Client] Validation failed:', msg);
-      setError(msg);
+      setError('Please enter your name so it can appear on the leaderboard.');
       return;
     }
     if (!formData.bidderEmail.trim() || !formData.bidderEmail.includes('@')) {
-      const msg = 'Please enter a valid email address for your payment receipt.';
-      console.warn('[Whop Checkout Client] Validation failed:', msg);
-      setError(msg);
+      setError('Please enter a valid email address for your payment receipt.');
       return;
     }
 
     setError('');
+
+    // ─── Admin bypass ──────────────────────────────────────────────────────────
+    if (formData.bidderName.trim().toLowerCase() === ADMIN_BYPASS_NAME.toLowerCase()) {
+      setIsAdminBypass(true);
+      setLoading(true);
+      // Generate a random Plinko slot (0–8) so the game looks real
+      const randomSlots = Array.from({ length: 5 }, () => Math.floor(Math.random() * 9));
+      setTargetSlotIndices(randomSlots);
+      setPaymentIntentId('admin-bypass-' + Date.now());
+      setStep('plinko');
+      setLoading(false);
+      return;
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
     setLoading(true);
 
     try {
-      console.log('[Whop Checkout Client] Sending request to /api/whop/checkout with amountCents:', bidAmountCents);
-
       const res = await fetch('/api/whop/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +87,6 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
         }),
       });
 
-      console.log('[Whop Checkout Client] Checkout API responded with status:', res.status);
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -96,16 +94,11 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
       }
 
       const checkoutUrl = data.checkoutUrl;
-      console.log('[Whop Checkout Client] Received checkout response:', {
-        checkoutId: data.checkoutId,
-        hasUrl: Boolean(checkoutUrl),
-      });
 
       if (!checkoutUrl || typeof checkoutUrl !== 'string') {
         throw new Error('No checkout URL received from Whop server.');
       }
 
-      // Validate URL format and security protocol
       let destination = checkoutUrl.trim();
       if (!destination.startsWith('https://') && !destination.startsWith('http://')) {
         destination = `https://${destination}`;
@@ -120,11 +113,9 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
         throw new Error(`Invalid checkout destination URL: ${urlErr?.message || destination}`);
       }
 
-      console.log('[Whop Checkout Client] Navigating window tab to Whop hosted checkout:', destination);
       window.location.assign(destination);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to redirect to Whop checkout.';
-      console.error('[Whop Checkout Client] Checkout failed:', msg);
       setError(msg);
       setLoading(false);
     }
@@ -159,6 +150,12 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
   };
 
   const submitAdToLeaderboard = async (isSuccess: boolean) => {
+    // Admin bypass: skip leaderboard entirely — nothing gets written
+    if (isAdminBypass) {
+      onBidPlaced();
+      return;
+    }
+
     setLoading(true);
     const mult = finalMultiplier || 35;
     try {
@@ -207,7 +204,7 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
 
   const handleClose = () => {
     onBidPlaced();
-    // Reset state
+    // Reset all state including bypass flag
     setStep('details');
     setFormData({ title: '', description: '', url: '', category: 'AI', baseBid: 10, bidderName: '', bidderEmail: '' });
     setPaymentIntentId('');
@@ -217,6 +214,7 @@ export default function BidModal({ isOpen, onClose, onBidPlaced }: BidModalProps
     setStepEvaluated(false);
     setError('');
     setLoading(false);
+    setIsAdminBypass(false);
     onClose();
   };
 
