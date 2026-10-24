@@ -190,22 +190,7 @@ export default function AppPredictionsPageClient() {
     marketType: 'survival' | 'movement';
   } | null>(null);
 
-  const [userBets, setUserBets] = useState<UserPredictionBet[]>([
-    {
-      id: 'b1',
-      marketType: 'survival',
-      appId: 'photoai',
-      appName: 'PhotoAI',
-      appIconEmoji: '',
-      betChoiceLabel: 'YES (Stay in Top 25)',
-      odds: 1.80,
-      wagerAmount: 50,
-      potentialPayout: 90,
-      status: 'active',
-      placedAt: new Date(now - 3600 * 1000),
-      settlesAt: new Date(now + 23 * 3600 * 1000),
-    },
-  ]);
+  const [userBets, setUserBets] = useState<UserPredictionBet[]>([]);
 
   const [sessionStartTime] = useState<Date>(new Date());
 
@@ -343,17 +328,43 @@ export default function AppPredictionsPageClient() {
         {activeTab === 'survival' && (
           <div>
             <div style={{ marginBottom: 20 }}>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                ️ App Survival Bets
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span>️ App Survival Bets</span>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-3, #86868b)',
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    padding: '3px 10px',
+                    borderRadius: '100px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  Launching Soon
+                </span>
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0 }}>
                 Will the app maintain its position in the top leaderboard bracket over the next 24 hours?
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 48 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: 20,
+                marginBottom: 48,
+                pointerEvents: 'none',
+                opacity: 0.85,
+              }}
+            >
               {DUMMY_SURVIVAL_APPS.map((app) => (
-                <SurvivalBetCard key={app.id} app={app} onBetClick={handleOpenSurvivalModal} />
+                <SurvivalBetCard key={app.id} app={app} onBetClick={handleOpenSurvivalModal} disabled />
               ))}
             </div>
           </div>

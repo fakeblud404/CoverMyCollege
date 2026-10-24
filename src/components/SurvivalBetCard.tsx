@@ -7,9 +7,10 @@ import CountdownTimer from './CountdownTimer';
 interface SurvivalBetCardProps {
   app: SurvivalMarketApp;
   onBetClick: (app: SurvivalMarketApp, choice: 'YES' | 'NO', odds: number) => void;
+  disabled?: boolean;
 }
 
-export default function SurvivalBetCard({ app, onBetClick }: SurvivalBetCardProps) {
+export default function SurvivalBetCard({ app, onBetClick, disabled = false }: SurvivalBetCardProps) {
   const [hoverYes, setHoverYes] = useState(false);
   const [hoverNo, setHoverNo] = useState(false);
 
@@ -84,57 +85,91 @@ export default function SurvivalBetCard({ app, onBetClick }: SurvivalBetCardProp
       {/* Yes / No Buttons */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <button
-          onClick={() => onBetClick(app, 'YES', app.yesOdds)}
-          onMouseEnter={() => setHoverYes(true)}
+          onClick={() => !disabled && onBetClick(app, 'YES', app.yesOdds)}
+          onMouseEnter={() => !disabled && setHoverYes(true)}
           onMouseLeave={() => setHoverYes(false)}
+          disabled={disabled}
           style={{
             minHeight: 48,
             padding: '10px 16px',
             borderRadius: 'var(--radius-md)',
-            background: hoverYes ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            color: hoverYes ? '#ffffff' : '#059669',
+            background: disabled
+              ? 'rgba(0, 0, 0, 0.04)'
+              : hoverYes
+              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+              : 'rgba(16, 185, 129, 0.1)',
+            border: disabled ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(16, 185, 129, 0.3)',
+            color: disabled ? 'var(--text-muted)' : hoverYes ? '#ffffff' : '#059669',
             fontWeight: 800,
             fontSize: '0.95rem',
-            cursor: 'pointer',
+            cursor: disabled ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             transition: 'all 0.2s ease',
-            transform: hoverYes ? 'translateY(-2px)' : 'none',
-            boxShadow: hoverYes ? '0 4px 14px rgba(16, 185, 129, 0.3)' : 'none',
+            transform: !disabled && hoverYes ? 'translateY(-2px)' : 'none',
+            boxShadow: !disabled && hoverYes ? '0 4px 14px rgba(16, 185, 129, 0.3)' : 'none',
+            opacity: disabled ? 0.6 : 1,
           }}
         >
           <span>Bet YES</span>
-          <span style={{ fontSize: '0.9rem', background: hoverYes ? 'rgba(255, 255, 255, 0.25)' : 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '6px' }}>
+          <span
+            style={{
+              fontSize: '0.9rem',
+              background: disabled
+                ? 'rgba(0, 0, 0, 0.06)'
+                : hoverYes
+                ? 'rgba(255, 255, 255, 0.25)'
+                : 'rgba(16, 185, 129, 0.15)',
+              padding: '2px 8px',
+              borderRadius: '6px',
+            }}
+          >
             {app.yesOdds.toFixed(2)}x
           </span>
         </button>
 
         <button
-          onClick={() => onBetClick(app, 'NO', app.noOdds)}
-          onMouseEnter={() => setHoverNo(true)}
+          onClick={() => !disabled && onBetClick(app, 'NO', app.noOdds)}
+          onMouseEnter={() => !disabled && setHoverNo(true)}
           onMouseLeave={() => setHoverNo(false)}
+          disabled={disabled}
           style={{
             minHeight: 48,
             padding: '10px 16px',
             borderRadius: 'var(--radius-md)',
-            background: hoverNo ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: hoverNo ? '#ffffff' : '#dc2626',
+            background: disabled
+              ? 'rgba(0, 0, 0, 0.04)'
+              : hoverNo
+              ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+              : 'rgba(239, 68, 68, 0.1)',
+            border: disabled ? '1px solid rgba(0, 0, 0, 0.08)' : '1px solid rgba(239, 68, 68, 0.3)',
+            color: disabled ? 'var(--text-muted)' : hoverNo ? '#ffffff' : '#dc2626',
             fontWeight: 800,
             fontSize: '0.95rem',
-            cursor: 'pointer',
+            cursor: disabled ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             transition: 'all 0.2s ease',
-            transform: hoverNo ? 'translateY(-2px)' : 'none',
-            boxShadow: hoverNo ? '0 4px 14px rgba(239, 68, 68, 0.3)' : 'none',
+            transform: !disabled && hoverNo ? 'translateY(-2px)' : 'none',
+            boxShadow: !disabled && hoverNo ? '0 4px 14px rgba(239, 68, 68, 0.3)' : 'none',
+            opacity: disabled ? 0.6 : 1,
           }}
         >
           <span>Bet NO</span>
-          <span style={{ fontSize: '0.9rem', background: hoverNo ? 'rgba(255, 255, 255, 0.25)' : 'rgba(239, 68, 68, 0.15)', padding: '2px 8px', borderRadius: '6px' }}>
+          <span
+            style={{
+              fontSize: '0.9rem',
+              background: disabled
+                ? 'rgba(0, 0, 0, 0.06)'
+                : hoverNo
+                ? 'rgba(255, 255, 255, 0.25)'
+                : 'rgba(239, 68, 68, 0.15)',
+              padding: '2px 8px',
+              borderRadius: '6px',
+            }}
+          >
             {app.noOdds.toFixed(2)}x
           </span>
         </button>
