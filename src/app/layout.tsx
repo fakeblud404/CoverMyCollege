@@ -30,7 +30,7 @@ export const metadata: Metadata = {
       "App creators bid for the top spot on our live leaderboard. Every dollar goes directly toward a $15,000 college tuition. Spin Plinko multipliers for extra bid power.",
     images: [
       {
-        url: "https://www.covermycollege.com/og-image.jpg",
+        url: "https://www.covermycollege.com/og-image.jpg?v=20261025",
         width: 1200,
         height: 630,
         type: "image/jpeg",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
       "App creators bid for the top spot on our live leaderboard. Every dollar goes directly toward a $15,000 college tuition. Spin Plinko multipliers for extra bid power.",
     images: [
       {
-        url: "https://www.covermycollege.com/og-image.jpg",
+        url: "https://www.covermycollege.com/og-image.jpg?v=20261025",
         alt: "CoverMyCollege — Bid to Rank #1 and fund $15,000 college tuition. A live leaderboard where app creators compete and 100% of proceeds go to college.",
       },
     ],
