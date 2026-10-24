@@ -18,8 +18,41 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Cover My College — Bid to Rank #1 & Fund $15,000 College Tuition",
   description:
-    "Apps spend money to rank #1 on our live ad leaderboard while 100% of proceeds fund a $15,000 college degree! Spin Plinko multipliers for maximum bid power.",
+    "App creators bid for the top spot on our live leaderboard. Every dollar goes directly toward a $15,000 college tuition. Spin Plinko multipliers for extra bid power.",
   keywords: ["cover my college", "college tuition", "advertising", "bidding", "leaderboard", "plinko", "app marketing"],
+  metadataBase: new URL("https://covermycollege.com"),
+  openGraph: {
+    type: "website",
+    url: "https://covermycollege.com/",
+    siteName: "CoverMyCollege",
+    title: "CoverMyCollege — Bid to Rank #1 · Fund $15,000 College Tuition",
+    description:
+      "App creators bid for the top spot on our live leaderboard. Every dollar goes directly toward a $15,000 college tuition. Spin Plinko multipliers for extra bid power.",
+    images: [
+      {
+        url: "https://covermycollege.com/og-image.jpg",
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+        alt: "CoverMyCollege — Bid to Rank #1 and fund $15,000 college tuition. A live leaderboard where app creators compete and 100% of proceeds go to college.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CoverMyCollege — Bid to Rank #1 · Fund $15,000 College Tuition",
+    description:
+      "App creators bid for the top spot on our live leaderboard. Every dollar goes directly toward a $15,000 college tuition. Spin Plinko multipliers for extra bid power.",
+    images: [
+      {
+        url: "https://covermycollege.com/og-image.jpg",
+        alt: "CoverMyCollege — Bid to Rank #1 and fund $15,000 college tuition. A live leaderboard where app creators compete and 100% of proceeds go to college.",
+      },
+    ],
+  },
+  alternates: {
+    canonical: "https://covermycollege.com/",
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
