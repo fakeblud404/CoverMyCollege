@@ -374,17 +374,43 @@ export default function AppPredictionsPageClient() {
         {activeTab === 'movement' && (
           <div>
             <div style={{ marginBottom: 20 }}>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                 Rank Movement Futures
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span> Rank Movement Futures</span>
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    color: 'var(--ink-3, #86868b)',
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    border: '1px solid rgba(0, 0, 0, 0.1)',
+                    padding: '3px 10px',
+                    borderRadius: '100px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  Launching Soon
+                </span>
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0 }}>
                 Predict how many spots an app will rise or drop in the leaderboard over the next 24 hours.
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginBottom: 48 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: 20,
+                marginBottom: 48,
+                pointerEvents: 'none',
+                opacity: 0.85,
+              }}
+            >
               {DUMMY_MOVEMENT_APPS.map((app) => (
-                <RankMovementBetCard key={app.id} app={app} onBetClick={handleOpenMovementModal} />
+                <RankMovementBetCard key={app.id} app={app} onBetClick={handleOpenMovementModal} disabled />
               ))}
             </div>
           </div>

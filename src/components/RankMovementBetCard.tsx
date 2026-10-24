@@ -7,9 +7,10 @@ import CountdownTimer from './CountdownTimer';
 interface RankMovementBetCardProps {
   app: RankMovementMarketApp;
   onBetClick: (app: RankMovementMarketApp, option: MovementOddsOption) => void;
+  disabled?: boolean;
 }
 
-export default function RankMovementBetCard({ app, onBetClick }: RankMovementBetCardProps) {
+export default function RankMovementBetCard({ app, onBetClick, disabled = false }: RankMovementBetCardProps) {
   const [selectedOptionType, setSelectedOptionType] = useState<string>(app.movementOptions[0].type);
 
   const currentOption = app.movementOptions.find((o) => o.type === selectedOptionType) || app.movementOptions[0];
@@ -98,8 +99,9 @@ export default function RankMovementBetCard({ app, onBetClick }: RankMovementBet
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: 4,
-                  cursor: 'pointer',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
                   transition: 'all 0.2s ease',
+                  opacity: disabled ? 0.7 : 1,
                 }}
               >
                 <span style={{ fontSize: '0.82rem', fontWeight: 700 }}>{opt.label}</span>
@@ -124,7 +126,8 @@ export default function RankMovementBetCard({ app, onBetClick }: RankMovementBet
       {/* Primary Bet CTA Button */}
       <button
         className="btn-bid"
-        onClick={() => onBetClick(app, currentOption)}
+        onClick={() => !disabled && onBetClick(app, currentOption)}
+        disabled={disabled}
         style={{
           minHeight: 48,
           fontSize: '0.95rem',
@@ -132,6 +135,8 @@ export default function RankMovementBetCard({ app, onBetClick }: RankMovementBet
           justifyContent: 'space-between',
           alignItems: 'center',
           width: '100%',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.6 : 1,
         }}
       >
         <span>Bet on &ldquo;{currentOption.label}&rdquo;</span>
